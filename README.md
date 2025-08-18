@@ -1,0 +1,2 @@
+# LUA-TESTE
+LUA 1
