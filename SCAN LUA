@@ -1,0 +1,932 @@
+-- ADVANCED REMOTE SCANNER PRO
+-- Press F1 to open/close menu
+-- Scans all remotes with advanced detection and analysis
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- ===== ADVANCED CONFIGURATION =====
+local MENU_KEY = Enum.KeyCode.F1
+local GUI_NAME = "AdvancedRemoteScanner"
+local SCAN_DEBOUNCE_TIME = 0.5 -- Seconds between scans
+local MAX_SCAN_DEPTH = 20 -- Maximum depth to scan
+local BATCH_SIZE = 50 -- Objects to scan per frame
+local SCAN_DELAY = 0.01 -- Delay between scan batches
+
+-- Advanced remote types to scan
+local REMOTE_TYPES = {
+    "RemoteEvent", 
+    "RemoteFunction", 
+    "BindableEvent", 
+    "BindableFunction",
+    "ModuleScript" -- Scan modules for remote references
+}
+
+-- Extended important keywords with patterns
+local IMPORTANT_KEYWORDS = {
+    -- Original keywords
+    "Attack", "Fire", "Shoot", "Weapon", "Use", "Quick", "Item", "Damage",
+    "Ammo", "Heal", "Shot", "Health", "Kill", "Hit", "Ability", "Skill",
+    "Magic", "Spell", "Reload", "Equip", "Unequip", "Throw", "Place",
+    "Build", "Craft", "Repair", "Upgrade", "Boost", "Power", "Energy",
+    "Stamina", "Shield", "Defense", "Offense", "Strike", "Slash", "Punch",
+    "Kick", "Jump", "Dash", "Teleport", "Fly", "Run", "Walk", "Crouch",
+    "Prone", "Aim", "Scope", "Zoom", "Target", "Lock", "Track", "Scan",
+    "Detect", "Sense", "Radar", "Map", "Minimap", "Compass", "GPS",
+    "Navigation", "Path", "Route", "Destination", "Waypoint", "Marker",
+    "Flag", "Capture", "Secure", "Defend", "Protect", "Guard", "Rescue",
+    "Save", "Revive", "Respawn", "Spawn", "Teleport", "Portal", "Gate",
+    "Door", "Key", "Lock", "Unlock", "Open", "Close", "Activate", "Deactivate",
+    "Enable", "Disable", "Toggle", "Switch", "Change", "Transform", "Mutate",
+    "Evolve", "Level", "XP", "Experience", "Points", "Score", "Currency",
+    "Money", "Gold", "Coins", "Cash", "Credits", "Gems", "Diamonds",
+    
+    -- New advanced keywords
+    "Network", "Sync", "Transfer", "Send", "Receive", "Request", "Response",
+    "Invoke", "Callback", "Listener", "Handler", "Process", "Execute",
+    "Command", "Order", "Signal", "Trigger", "Event", "Function", "Method",
+    "Protocol", "Packet", "Data", "Info", "Message", "Broadcast", "Multicast",
+    "Unicast", "Publish", "Subscribe", "Queue", "Stack", "Buffer", "Stream",
+    "Channel", "Connection", "Session", "Handshake", "Auth", "Login", "Logout",
+    "Register", "Verify", "Validate", "Check", "Test", "Debug", "Log",
+    "Error", "Warning", "Exception", "Crash", "Exploit", "Hack", "Cheat",
+    "Bypass", "AntiCheat", "Security", "Protection", "Shield", "Barrier",
+    "Filter", "Block", "Allow", "Permit", "Deny", "Accept", "Reject",
+    "Success", "Failure", "Result", "Status", "State", "Mode", "Setting",
+    "Config", "Option", "Preference", "Parameter", "Argument", "Value",
+    "Variable", "Constant", "Property", "Attribute", "Field", "Member",
+    "Class", "Object", "Instance", "Reference", "Pointer", "Address",
+    "Memory", "Cache", "Store", "Save", "Load", "Import", "Export",
+    "Serialize", "Deserialize", "Encode", "Decode", "Compress", "Decompress",
+    "Encrypt", "Decrypt", "Hash", "Checksum", "Signature", "Certificate",
+    "Token", "Key", "Secret", "Password", "Credential", "Identity",
+    "Account", "Profile", "User", "Player", "Character", "Avatar",
+    "Model", "Part", "Mesh", "Texture", "Material", "Color", "Effect",
+    "Sound", "Music", "Audio", "Video", "Image", "Animation", "Camera",
+    "Light", "Shadow", "Reflection", "Refraction", "Physics", "Gravity",
+    "Force", "Velocity", "Acceleration", "Rotation", "Position", "Location",
+    "Coordinate", "Vector", "Matrix", "Transform", "Quaternion", "Euler",
+    "Angle", "Degree", "Radian", "Direction", "Orientation", "Scale",
+    "Size", "Dimension", "Volume", "Area", "Perimeter", "Distance",
+    "Time", "Duration", "Delay", "Interval", "Timeout", "Timestamp",
+    "Date", "Calendar", "Schedule", "Timer", "Counter", "Meter", "Gauge",
+    "Indicator", "Display", "Monitor", "Screen", "Window", "Panel",
+    "Dialog", "Menu", "Button", "Input", "Output", "Control", "Interface"
+}
+
+-- Advanced patterns to detect remotes
+local REMOTE_PATTERNS = {
+    "Remote",
+    "Net",
+    "Network",
+    "Comm",
+    "Event",
+    "Signal",
+    "Handler",
+    "Callback",
+    "Invoke",
+    "Request",
+    "Response",
+    "Send",
+    "Receive",
+    "Sync",
+    "Data"
+}
+
+-- ===== ADVANCED REMOTE SCANNER =====
+local remotes = {
+    all = {},
+    important = {},
+    byType = {},
+    byService = {},
+    byPath = {},
+    analyzed = {}
+}
+
+local lastScanTime = 0
+local isScanning = false
+local scanCoroutine = nil
+
+-- Get full path with service information
+local function getFullPath(instance)
+    local parts = {}
+    local current = instance
+    
+    while current and current ~= game do
+        table.insert(parts, 1, current.Name)
+        current = current.Parent
+    end
+    
+    local fullPath = table.concat(parts, "/")
+    
+    -- Extract service name
+    local service = "Unknown"
+    if parts[1] then
+        for _, svc in ipairs({"Players", "ReplicatedStorage", "ReplicatedFirst", "ServerStorage", "ServerScriptService", "Workspace", "Lighting", "SoundService", "Chat", "LogService", "HttpService", "RunService", "TweenService", "StarterGui", "StarterPack", "StarterPlayer"}) do
+            if parts[1] == svc then
+                service = svc
+                break
+            end
+        end
+    end
+    
+    return fullPath, service
+end
+
+-- Check if a string contains any important keywords
+local function containsImportantKeyword(str)
+    str = string.lower(str)
+    for _, keyword in ipairs(IMPORTANT_KEYWORDS) do
+        if string.find(str, string.lower(keyword)) then
+            return true, keyword
+        end
+    end
+    
+    -- Check for remote patterns
+    for _, pattern in ipairs(REMOTE_PATTERNS) do
+        if string.find(str, string.lower(pattern)) then
+            return true, pattern
+        end
+    end
+    
+    return false
+end
+
+-- Analyze a remote for additional information
+local function analyzeRemote(remote)
+    local analysis = {
+        references = {},
+        possibleParams = {},
+        possibleReturns = {},
+        securityLevel = "Unknown"
+    }
+    
+    -- Check for references in scripts
+    local function findReferences(parent, path)
+        for _, child in ipairs(parent:GetChildren()) do
+            local childPath = path .. "/" .. child.Name
+            
+            if child:IsA("Script") or child:IsA("LocalScript") or child:IsA("ModuleScript") then
+                local source = child.Source
+                if source then
+                    -- Look for references to this remote
+                    local remoteName = remote.Name
+                    if string.find(source, remoteName, 1, true) then
+                        table.insert(analysis.references, childPath)
+                        
+                        -- Try to extract parameter information
+                        -- This is a simple heuristic and may not be accurate
+                        if remote:IsA("RemoteEvent") then
+                            if string.find(source, remoteName .. ":FireServer%(") then
+                                -- Try to find parameters
+                                local paramMatch = string.match(source, remoteName .. ":FireServer%(([^)]+)%)")
+                                if paramMatch then
+                                    table.insert(analysis.possibleParams, paramMatch)
+                                end
+                            end
+                        elseif remote:IsA("RemoteFunction") then
+                            if string.find(source, remoteName .. ":InvokeServer%(") then
+                                -- Try to find parameters
+                                local paramMatch = string.match(source, remoteName .. ":InvokeServer%(([^)]+)%)")
+                                if paramMatch then
+                                    table.insert(analysis.possibleParams, paramMatch)
+                                end
+                                
+                                -- Try to find return values
+                                local returnMatch = string.match(source, "local (.+) = " .. remoteName .. ":InvokeServer")
+                                if returnMatch then
+                                    table.insert(analysis.possibleReturns, returnMatch)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- Recursively search
+            findReferences(child, childPath)
+        end
+    end
+    
+    findReferences(game, "")
+    
+    -- Determine security level based on references and location
+    if #analysis.references > 5 then
+        analysis.securityLevel = "High"
+    elseif #analysis.references > 2 then
+        analysis.securityLevel = "Medium"
+    else
+        analysis.securityLevel = "Low"
+    end
+    
+    return analysis
+end
+
+-- Advanced scanning with coroutine for performance
+local function scanForRemotes(parent, depth, path)
+    if depth > MAX_SCAN_DEPTH then return end
+    if not parent then return end
+    
+    local children = parent:GetChildren()
+    for i = 1, #children do
+        local child = children[i]
+        local childPath = path .. "/" .. child.Name
+        
+        -- Check if this is a remote type we're interested in
+        for _, remoteType in ipairs(REMOTE_TYPES) do
+            if child:IsA(remoteType) then
+                local fullPath, service = getFullPath(child)
+                local isImportant, keyword = containsImportantKeyword(fullPath)
+                
+                -- Create remote info
+                local remoteInfo = {
+                    Path = fullPath,
+                    Type = remoteType,
+                    Instance = child,
+                    Service = service,
+                    Depth = depth,
+                    IsImportant = isImportant,
+                    Keyword = keyword,
+                    Analyzed = false
+                }
+                
+                -- Add to appropriate collections
+                table.insert(remotes.all, remoteInfo)
+                
+                if isImportant then
+                    table.insert(remotes.important, remoteInfo)
+                end
+                
+                -- Organize by type
+                if not remotes.byType[remoteType] then
+                    remotes.byType[remoteType] = {}
+                end
+                table.insert(remotes.byType[remoteType], remoteInfo)
+                
+                -- Organize by service
+                if not remotes.byService[service] then
+                    remotes.byService[service] = {}
+                end
+                table.insert(remotes.byService[service], remoteInfo)
+                
+                -- Organize by path (first level)
+                local firstLevel = string.match(fullPath, "([^/]+)")
+                if firstLevel then
+                    if not remotes.byPath[firstLevel] then
+                        remotes.byPath[firstLevel] = {}
+                    end
+                    table.insert(remotes.byPath[firstLevel], remoteInfo)
+                end
+                
+                break
+            end
+        end
+        
+        -- Yield periodically to prevent lag
+        if i % BATCH_SIZE == 0 then
+            RunService.Heartbeat:Wait()
+        end
+        
+        -- Recursively scan children
+        scanForRemotes(child, depth + 1, childPath)
+    end
+end
+
+-- Start a new scan
+local function startScan()
+    if isScanning then return end
+    
+    -- Check debounce
+    local currentTime = tick()
+    if currentTime - lastScanTime < SCAN_DEBOUNCE_TIME then
+        return
+    end
+    lastScanTime = currentTime
+    
+    -- Clear previous results
+    remotes = {
+        all = {},
+        important = {},
+        byType = {},
+        byService = {},
+        byPath = {},
+        analyzed = {}
+    }
+    
+    -- Start scanning in a coroutine
+    isScanning = true
+    scanCoroutine = coroutine.create(function()
+        scanForRemotes(game, 0, "")
+        isScanning = false
+        
+        -- Update UI
+        if updateStatus then
+            updateStatus("Found " .. #remotes.all .. " remotes (" .. #remotes.important .. " important)")
+        end
+        
+        if updateRemoteList then
+            updateRemoteList()
+        end
+        
+        print("Scan completed. Found " .. #remotes.all .. " remotes (" .. #remotes.important .. " important)")
+    end)
+    
+    coroutine.resume(scanCoroutine)
+end
+
+-- Analyze a specific remote
+local function analyzeRemoteById(id)
+    if not remotes.all[id] then return end
+    
+    local remote = remotes.all[id]
+    if remote.Analyzed then return end
+    
+    -- Perform analysis
+    remote.Analysis = analyzeRemote(remote.Instance)
+    remote.Analyzed = true
+    
+    -- Store in analyzed collection
+    remotes.analyzed[id] = remote
+    
+    return remote.Analysis
+end
+
+-- ===== ADVANCED MENU CREATION =====
+local screenGui = nil
+local menuFrame = nil
+local scrollingFrame = nil
+local showImportantOnly = false
+local filterType = "All"
+local filterService = "All"
+local filterPath = "All"
+local sortBy = "Name"
+local sortAscending = true
+
+local function createMenu()
+    screenGui = Instance.new("ScreenGui")
+    screenGui.Name = GUI_NAME
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    
+    menuFrame = Instance.new("Frame")
+    menuFrame.Name = "MenuFrame"
+    menuFrame.Size = UDim2.new(0, 800, 0, 600)
+    menuFrame.Position = UDim2.new(0.5, -400, 0.5, -300)
+    menuFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    menuFrame.BorderSizePixel = 0
+    menuFrame.Parent = screenGui
+    menuFrame.Visible = false
+    menuFrame.Active = true
+    menuFrame.Draggable = true
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = menuFrame
+    
+    -- Title bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Name = "TitleBar"
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.Position = UDim2.new(0, 0, 0, 0)
+    titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = menuFrame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 10)
+    titleCorner.Parent = titleBar
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Size = UDim2.new(1, 0, 1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "ADVANCED REMOTE SCANNER PRO"
+    titleLabel.TextColor3 = Color3.fromRGB(0, 200, 255)
+    titleLabel.TextSize = 20
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Parent = titleBar
+    
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -30, 0, 0)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Text = "X"
+    closeButton.TextColor3 = Color3.fromRGB(255, 100, 100)
+    closeButton.TextSize = 18
+    closeButton.Font = Enum.Font.GothamBold
+    closeButton.Parent = titleBar
+    
+    closeButton.MouseButton1Click:Connect(function()
+        menuFrame.Visible = false
+    end)
+    
+    -- Control panel
+    local controlPanel = Instance.new("Frame")
+    controlPanel.Name = "ControlPanel"
+    controlPanel.Size = UDim2.new(1, 0, 0, 80)
+    controlPanel.Position = UDim2.new(0, 0, 0, 40)
+    controlPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    controlPanel.BorderSizePixel = 0
+    controlPanel.Parent = menuFrame
+    
+    local controlCorner = Instance.new("UICorner")
+    controlCorner.CornerRadius = UDim.new(0, 5)
+    controlCorner.Parent = controlPanel
+    
+    -- Buttons row 1
+    local buttonRow1 = Instance.new("Frame")
+    buttonRow1.Name = "ButtonRow1"
+    buttonRow1.Size = UDim2.new(1, 0, 0, 35)
+    buttonRow1.Position = UDim2.new(0, 0, 0, 0)
+    buttonRow1.BackgroundColor3 = Color3.fromRGB(0, 0, 0, 0)
+    buttonRow1.BorderSizePixel = 0
+    buttonRow1.Parent = controlPanel
+    
+    local rescanButton = Instance.new("TextButton")
+    rescanButton.Name = "RescanButton"
+    rescanButton.Size = UDim2.new(0, 100, 0, 30)
+    rescanButton.Position = UDim2.new(0, 10, 0, 2.5)
+    rescanButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    rescanButton.Text = "Rescan"
+    rescanButton.TextColor3 = Color3.new(1, 1, 1)
+    rescanButton.TextSize = 14
+    rescanButton.Font = Enum.Font.Gotham
+    rescanButton.Parent = buttonRow1
+    
+    local rescanCorner = Instance.new("UICorner")
+    rescanCorner.CornerRadius = UDim.new(0, 5)
+    rescanCorner.Parent = rescanButton
+    
+    rescanButton.MouseButton1Click:Connect(function()
+        startScan()
+    end)
+    
+    local copyAllButton = Instance.new("TextButton")
+    copyAllButton.Name = "CopyAllButton"
+    copyAllButton.Size = UDim2.new(0, 100, 0, 30)
+    copyAllButton.Position = UDim2.new(0, 120, 0, 2.5)
+    copyAllButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+    copyAllButton.Text = "Copy All"
+    copyAllButton.TextColor3 = Color3.new(1, 1, 1)
+    copyAllButton.TextSize = 14
+    copyAllButton.Font = Enum.Font.Gotham
+    copyAllButton.Parent = buttonRow1
+    
+    local copyAllCorner = Instance.new("UICorner")
+    copyAllCorner.CornerRadius = UDim.new(0, 5)
+    copyAllCorner.Parent = copyAllButton
+    
+    copyAllButton.MouseButton1Click:Connect(function()
+        local allText = ""
+        for _, remote in ipairs(remotes.all) do
+            allText = allText .. remote.Type .. ": " .. remote.Path .. "\n"
+        end
+        
+        setclipboard(allText)
+        print("Copied all remotes to clipboard")
+    end)
+    
+    local copyImportantButton = Instance.new("TextButton")
+    copyImportantButton.Name = "CopyImportantButton"
+    copyImportantButton.Size = UDim2.new(0, 120, 0, 30)
+    copyImportantButton.Position = UDim2.new(0, 230, 0, 2.5)
+    copyImportantButton.BackgroundColor3 = Color3.fromRGB(215, 120, 0)
+    copyImportantButton.Text = "Copy Important"
+    copyImportantButton.TextColor3 = Color3.new(1, 1, 1)
+    copyImportantButton.TextSize = 14
+    copyImportantButton.Font = Enum.Font.Gotham
+    copyImportantButton.Parent = buttonRow1
+    
+    local copyImportantCorner = Instance.new("UICorner")
+    copyImportantCorner.CornerRadius = UDim.new(0, 5)
+    copyImportantCorner.Parent = copyImportantButton
+    
+    copyImportantButton.MouseButton1Click:Connect(function()
+        local importantText = ""
+        for _, remote in ipairs(remotes.important) do
+            importantText = importantText .. remote.Type .. ": " .. remote.Path .. "\n"
+        end
+        
+        setclipboard(importantText)
+        print("Copied important remotes to clipboard")
+    end)
+    
+    local toggleImportantButton = Instance.new("TextButton")
+    toggleImportantButton.Name = "ToggleImportantButton"
+    toggleImportantButton.Size = UDim2.new(0, 120, 0, 30)
+    toggleImportantButton.Position = UDim2.new(0, 360, 0, 2.5)
+    toggleImportantButton.BackgroundColor3 = Color3.fromRGB(120, 0, 215)
+    toggleImportantButton.Text = "Show: All"
+    toggleImportantButton.TextColor3 = Color3.new(1, 1, 1)
+    toggleImportantButton.TextSize = 14
+    toggleImportantButton.Font = Enum.Font.Gotham
+    toggleImportantButton.Parent = buttonRow1
+    
+    local toggleImportantCorner = Instance.new("UICorner")
+    toggleImportantCorner.CornerRadius = UDim.new(0, 5)
+    toggleImportantCorner.Parent = toggleImportantButton
+    
+    toggleImportantButton.MouseButton1Click:Connect(function()
+        showImportantOnly = not showImportantOnly
+        toggleImportantButton.Text = showImportantOnly and "Show: Important" or "Show: All"
+        updateRemoteList()
+    end)
+    
+    -- Buttons row 2
+    local buttonRow2 = Instance.new("Frame")
+    buttonRow2.Name = "ButtonRow2"
+    buttonRow2.Size = UDim2.new(1, 0, 0, 35)
+    buttonRow2.Position = UDim2.new(0, 0, 0, 40)
+    buttonRow2.BackgroundColor3 = Color3.fromRGB(0, 0, 0, 0)
+    buttonRow2.BorderSizePixel = 0
+    buttonRow2.Parent = controlPanel
+    
+    -- Filter dropdowns would go here
+    -- For simplicity, we'll use buttons instead of actual dropdowns
+    
+    -- Filter type button
+    local filterTypeButton = Instance.new("TextButton")
+    filterTypeButton.Name = "FilterTypeButton"
+    filterTypeButton.Size = UDim2.new(0, 100, 0, 30)
+    filterTypeButton.Position = UDim2.new(0, 10, 0, 2.5)
+    filterTypeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+    filterTypeButton.Text = "Type: All"
+    filterTypeButton.TextColor3 = Color3.new(1, 1, 1)
+    filterTypeButton.TextSize = 12
+    filterTypeButton.Font = Enum.Font.Gotham
+    filterTypeButton.Parent = buttonRow2
+    
+    local filterTypeCorner = Instance.new("UICorner")
+    filterTypeCorner.CornerRadius = UDim.new(0, 5)
+    filterTypeCorner.Parent = filterTypeButton
+    
+    filterTypeButton.MouseButton1Click:Connect(function()
+        -- Cycle through filter types
+        local types = {"All", "RemoteEvent", "RemoteFunction", "BindableEvent", "BindableFunction", "ModuleScript"}
+        local currentIndex = table.find(types, filterType) or 1
+        filterType = types[(currentIndex % #types) + 1]
+        filterTypeButton.Text = "Type: " .. filterType
+        updateRemoteList()
+    end)
+    
+    -- Filter service button
+    local filterServiceButton = Instance.new("TextButton")
+    filterServiceButton.Name = "FilterServiceButton"
+    filterServiceButton.Size = UDim2.new(0, 120, 0, 30)
+    filterServiceButton.Position = UDim2.new(0, 120, 0, 2.5)
+    filterServiceButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+    filterServiceButton.Text = "Service: All"
+    filterServiceButton.TextColor3 = Color3.new(1, 1, 1)
+    filterServiceButton.TextSize = 12
+    filterServiceButton.Font = Enum.Font.Gotham
+    filterServiceButton.Parent = buttonRow2
+    
+    local filterServiceCorner = Instance.new("UICorner")
+    filterServiceCorner.CornerRadius = UDim.new(0, 5)
+    filterServiceCorner.Parent = filterServiceButton
+    
+    filterServiceButton.MouseButton1Click:Connect(function()
+        -- Cycle through services
+        local services = {"All"}
+        for service, _ in pairs(remotes.byService) do
+            table.insert(services, service)
+        end
+        local currentIndex = table.find(services, filterService) or 1
+        filterService = services[(currentIndex % #services) + 1]
+        filterServiceButton.Text = "Service: " .. filterService
+        updateRemoteList()
+    end)
+    
+    -- Sort button
+    local sortButton = Instance.new("TextButton")
+    sortButton.Name = "SortButton"
+    sortButton.Size = UDim2.new(0, 100, 0, 30)
+    sortButton.Position = UDim2.new(0, 250, 0, 2.5)
+    sortButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+    sortButton.Text = "Sort: Name"
+    sortButton.TextColor3 = Color3.new(1, 1, 1)
+    sortButton.TextSize = 12
+    sortButton.Font = Enum.Font.Gotham
+    sortButton.Parent = buttonRow2
+    
+    local sortCorner = Instance.new("UICorner")
+    sortCorner.CornerRadius = UDim.new(0, 5)
+    sortCorner.Parent = sortButton
+    
+    sortButton.MouseButton1Click:Connect(function()
+        -- Cycle through sort options
+        local sortOptions = {"Name", "Type", "Service", "Depth"}
+        local currentIndex = table.find(sortOptions, sortBy) or 1
+        sortBy = sortOptions[(currentIndex % #sortOptions) + 1]
+        sortButton.Text = "Sort: " .. sortBy
+        updateRemoteList()
+    end)
+    
+    -- Sort direction button
+    local sortDirButton = Instance.new("TextButton")
+    sortDirButton.Name = "SortDirButton"
+    sortDirButton.Size = UDim2.new(0, 100, 0, 30)
+    sortDirButton.Position = UDim2.new(0, 360, 0, 2.5)
+    sortDirButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+    sortDirButton.Text = sortAscending and "Asc" or "Desc"
+    sortDirButton.TextColor3 = Color3.new(1, 1, 1)
+    sortDirButton.TextSize = 12
+    sortDirButton.Font = Enum.Font.Gotham
+    sortDirButton.Parent = buttonRow2
+    
+    local sortDirCorner = Instance.new("UICorner")
+    sortDirCorner.CornerRadius = UDim.new(0, 5)
+    sortDirCorner.Parent = sortDirButton
+    
+    sortDirButton.MouseButton1Click:Connect(function()
+        sortAscending = not sortAscending
+        sortDirButton.Text = sortAscending and "Asc" or "Desc"
+        updateRemoteList()
+    end)
+    
+    -- Create scrolling frame
+    scrollingFrame = Instance.new("ScrollingFrame")
+    scrollingFrame.Name = "RemoteList"
+    scrollingFrame.Size = UDim2.new(1, -20, 1, -130)
+    scrollingFrame.Position = UDim2.new(0, 10, 0, 130)
+    scrollingFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    scrollingFrame.BorderSizePixel = 0
+    scrollingFrame.ScrollBarThickness = 8
+    scrollingFrame.Parent = menuFrame
+    
+    local scrollCorner = Instance.new("UICorner")
+    scrollCorner.CornerRadius = UDim.new(0, 5)
+    scrollCorner.Parent = scrollingFrame
+    
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.Name
+    layout.Padding = UDim.new(0, 5)
+    layout.Parent = scrollingFrame
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, 10)
+    padding.PaddingRight = UDim.new(0, 10)
+    padding.PaddingTop = UDim.new(0, 10)
+    padding.PaddingBottom = UDim.new(0, 10)
+    padding.Parent = scrollingFrame
+    
+    -- Status label
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "StatusLabel"
+    statusLabel.Size = UDim2.new(1, 0, 0, 30)
+    statusLabel.Position = UDim2.new(0, 0, 1, -30)
+    statusLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    statusLabel.BorderSizePixel = 0
+    statusLabel.Text = "Ready"
+    statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    statusLabel.TextSize = 14
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.Parent = menuFrame
+    
+    local statusCorner = Instance.new("UICorner")
+    statusCorner.CornerRadius = UDim.new(0, 5)
+    statusCorner.Parent = statusLabel
+    
+    -- Update status function
+    local function updateStatus(text)
+        statusLabel.Text = text
+    end
+    
+    return updateStatus
+end
+
+-- ===== ADVANCED REMOTE LIST UPDATER =====
+local function updateRemoteList()
+    if not scrollingFrame then return end
+    
+    -- Clear existing items
+    for _, child in ipairs(scrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") or child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    -- Determine which remotes to show
+    local remotesToShow = showImportantOnly and remotes.important or remotes.all
+    
+    -- Apply filters
+    local filteredRemotes = {}
+    
+    for _, remote in ipairs(remotesToShow) do
+        -- Type filter
+        if filterType ~= "All" and remote.Type ~= filterType then
+            continue
+        end
+        
+        -- Service filter
+        if filterService ~= "All" and remote.Service ~= filterService then
+            continue
+        end
+        
+        table.insert(filteredRemotes, remote)
+    end
+    
+    -- Sort remotes
+    table.sort(filteredRemotes, function(a, b)
+        local aValue, bValue
+        
+        if sortBy == "Name" then
+            aValue = a.Path
+            bValue = b.Path
+        elseif sortBy == "Type" then
+            aValue = a.Type
+            bValue = b.Type
+        elseif sortBy == "Service" then
+            aValue = a.Service
+            bValue = b.Service
+        elseif sortBy == "Depth" then
+            aValue = a.Depth
+            bValue = b.Depth
+        end
+        
+        if sortAscending then
+            return aValue < bValue
+        else
+            return aValue > bValue
+        end
+    end)
+    
+    -- Create buttons for each remote
+    for i, remote in ipairs(filteredRemotes) do
+        local remoteFrame = Instance.new("Frame")
+        remoteFrame.Name = "RemoteFrame_" .. i
+        remoteFrame.Size = UDim2.new(1, 0, 0, 60)
+        remoteFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+        remoteFrame.BorderSizePixel = 0
+        remoteFrame.Parent = scrollingFrame
+        
+        local frameCorner = Instance.new("UICorner")
+        frameCorner.CornerRadius = UDim.new(0, 5)
+        frameCorner.Parent = remoteFrame
+        
+        -- Type indicator
+        local typeIndicator = Instance.new("Frame")
+        typeIndicator.Name = "TypeIndicator"
+        typeIndicator.Size = UDim2.new(0, 5, 1, 0)
+        typeIndicator.Position = UDim2.new(0, 0, 0, 0)
+        typeIndicator.BackgroundColor3 = remote.IsImportant and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(100, 150, 255)
+        typeIndicator.BorderSizePixel = 0
+        typeIndicator.Parent = remoteFrame
+        
+        -- Remote info
+        local infoFrame = Instance.new("Frame")
+        infoFrame.Name = "InfoFrame"
+        infoFrame.Size = UDim2.new(1, -10, 1, 0)
+        infoFrame.Position = UDim2.new(0, 10, 0, 0)
+        infoFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0, 0)
+        infoFrame.BorderSizePixel = 0
+        infoFrame.Parent = remoteFrame
+        
+        -- Path label
+        local pathLabel = Instance.new("TextLabel")
+        pathLabel.Name = "PathLabel"
+        pathLabel.Size = UDim2.new(1, 0, 0, 25)
+        pathLabel.Position = UDim2.new(0, 0, 0, 0)
+        pathLabel.BackgroundTransparency = 1
+        pathLabel.Text = remote.Path
+        pathLabel.TextColor3 = Color3.new(1, 1, 1)
+        pathLabel.TextSize = 14
+        pathLabel.Font = Enum.Font.Gotham
+        pathLabel.TextXAlignment = Enum.TextXAlignment.Left
+        pathLabel.Parent = infoFrame
+        
+        -- Type and service label
+        local typeServiceLabel = Instance.new("TextLabel")
+        typeServiceLabel.Name = "TypeServiceLabel"
+        typeServiceLabel.Size = UDim2.new(1, 0, 0, 20)
+        typeServiceLabel.Position = UDim2.new(0, 0, 0, 25)
+        typeServiceLabel.BackgroundTransparency = 1
+        typeServiceLabel.Text = "Type: " .. remote.Type .. " | Service: " .. remote.Service .. " | Depth: " .. remote.Depth
+        typeServiceLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+        typeServiceLabel.TextSize = 12
+        typeServiceLabel.Font = Enum.Font.Gotham
+        typeServiceLabel.TextXAlignment = Enum.TextXAlignment.Left
+        typeServiceLabel.Parent = infoFrame
+        
+        -- Keyword label if important
+        if remote.IsImportant then
+            local keywordLabel = Instance.new("TextLabel")
+            keywordLabel.Name = "KeywordLabel"
+            keywordLabel.Size = UDim2.new(1, 0, 0, 15)
+            keywordLabel.Position = UDim2.new(0, 0, 0, 45)
+            keywordLabel.BackgroundTransparency = 1
+            keywordLabel.Text = "Keyword: " .. (remote.Keyword or "Unknown")
+            keywordLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+            keywordLabel.TextSize = 11
+            keywordLabel.Font = Enum.Font.Gotham
+            keywordLabel.TextXAlignment = Enum.TextXAlignment.Left
+            keywordLabel.Parent = infoFrame
+        end
+        
+        -- Copy button
+        local copyButton = Instance.new("TextButton")
+        copyButton.Name = "CopyButton"
+        copyButton.Size = UDim2.new(0, 60, 0, 25)
+        copyButton.Position = UDim2.new(1, -70, 0, 5)
+        copyButton.BackgroundColor3 = Color3.fromRGB(70, 70, 90)
+        copyButton.Text = "Copy"
+        copyButton.TextColor3 = Color3.new(1, 1, 1)
+        copyButton.TextSize = 12
+        copyButton.Font = Enum.Font.Gotham
+        copyButton.Parent = remoteFrame
+        
+        local copyCorner = Instance.new("UICorner")
+        copyCorner.CornerRadius = UDim.new(0, 3)
+        copyCorner.Parent = copyButton
+        
+        copyButton.MouseButton1Click:Connect(function()
+            setclipboard(remote.Path)
+            print("Copied to clipboard: " .. remote.Path)
+        end)
+        
+        -- Analyze button
+        local analyzeButton = Instance.new("TextButton")
+        analyzeButton.Name = "AnalyzeButton"
+        analyzeButton.Size = UDim2.new(0, 60, 0, 25)
+        analyzeButton.Position = UDim2.new(1, -70, 0, 30)
+        analyzeButton.BackgroundColor3 = Color3.fromRGB(70, 130, 180)
+        analyzeButton.Text = "Analyze"
+        analyzeButton.TextColor3 = Color3.new(1, 1, 1)
+        analyzeButton.TextSize = 12
+        analyzeButton.Font = Enum.Font.Gotham
+        analyzeButton.Parent = remoteFrame
+        
+        local analyzeCorner = Instance.new("UICorner")
+        analyzeCorner.CornerRadius = UDim.new(0, 3)
+        analyzeCorner.Parent = analyzeButton
+        
+        analyzeButton.MouseButton1Click:Connect(function()
+            local analysis = analyzeRemoteById(i)
+            if analysis then
+                local analysisText = "Analysis for: " .. remote.Path .. "\n\n"
+                analysisText = analysisText .. "Security Level: " .. analysis.securityLevel .. "\n"
+                analysisText = analysisText .. "References: " .. #analysis.references .. "\n\n"
+                
+                if #analysis.references > 0 then
+                    analysisText = analysisText .. "References:\n"
+                    for _, ref in ipairs(analysis.references) do
+                        analysisText = analysisText .. "  - " .. ref .. "\n"
+                    end
+                end
+                
+                if #analysis.possibleParams > 0 then
+                    analysisText = analysisText .. "\nPossible Parameters:\n"
+                    for _, param in ipairs(analysis.possibleParams) do
+                        analysisText = analysisText .. "  - " .. param .. "\n"
+                    end
+                end
+                
+                if #analysis.possibleReturns > 0 then
+                    analysisText = analysisText .. "\nPossible Returns:\n"
+                    for _, ret in ipairs(analysis.possibleReturns) do
+                        analysisText = analysisText .. "  - " .. ret .. "\n"
+                    end
+                end
+                
+                setclipboard(analysisText)
+                print("Analysis copied to clipboard")
+            end
+        end)
+    end
+    
+    -- Update canvas size
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, #filteredRemotes * 65)
+end
+
+-- ===== INITIALIZE =====
+local function initialize()
+    -- Create menu
+    updateStatus = createMenu()
+    
+    -- Initial scan
+    updateStatus("Scanning for remotes...")
+    startScan()
+    
+    -- Toggle menu with F1
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if input.KeyCode == MENU_KEY and not gameProcessed then
+            menuFrame.Visible = not menuFrame.Visible
+        end
+    end)
+    
+    print("Advanced Remote Scanner Pro initialized. Press F1 to open menu.")
+end
+
+-- Run initialization
+initialize()
