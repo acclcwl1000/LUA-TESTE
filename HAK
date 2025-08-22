@@ -1,0 +1,3107 @@
+-- 0xGREEN ULTIMATE MAX - PROFESSIONAL EDITION
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Camera = Workspace.CurrentCamera
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService("GuiService")
+local CoreGui = game:GetService("CoreGui")
+local Stats = game:GetService("Stats")
+local NetworkClient = game:GetService("NetworkClient")
+local VirtualUser = game:GetService("VirtualUser")
+local TeleportService = game:GetService("TeleportService")
+
+-- Player
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Remote Integration
+local remotes = {
+    Events = {},
+    Functions = {}
+}
+
+-- Initialize remotes with error handling
+local function initRemotes()
+    local eventsFolder = ReplicatedStorage:FindFirstChild("Events")
+    local functionsFolder = ReplicatedStorage:FindFirstChild("Functions")
+    
+    if eventsFolder then
+        remotes.Events.Damage = eventsFolder:FindFirstChild("Damage")
+        remotes.Events.Teleport = eventsFolder:FindFirstChild("Teleport")
+        remotes.Events.Bring = eventsFolder:FindFirstChild("Bring")
+        remotes.Events.Fling = eventsFolder:FindFirstChild("Fling")
+        remotes.Events.Kill = eventsFolder:FindFirstChild("Kill")
+        remotes.Events.God = eventsFolder:FindFirstChild("God")
+        remotes.Events.SemiGod = eventsFolder:FindFirstChild("SemiGod")
+        
+        print("[0xGREEN] Remote Events initialized")
+        for name, remote in pairs(remotes.Events) do
+            if remote then
+                print("[0xGREEN] Remote Event found: " .. name)
+            else
+                print("[0xGREEN] Remote Event not found: " .. name)
+            end
+        end
+    else
+        print("[0xGREEN] Events folder not found in ReplicatedStorage")
+    end
+    
+    if functionsFolder then
+        remotes.Functions.GiveTool = functionsFolder:FindFirstChild("GiveTool")
+        remotes.Functions.GiveCash = functionsFolder:FindFirstChild("GiveCash")
+        
+        print("[0xGREEN] Remote Functions initialized")
+        for name, remote in pairs(remotes.Functions) do
+            if remote then
+                print("[0xGREEN] Remote Function found: " .. name)
+            else
+                print("[0xGREEN] Remote Function not found: " .. name)
+            end
+        end
+    else
+        print("[0xGREEN] Functions folder not found in ReplicatedStorage")
+    end
+end
+
+-- Professional UI Configuration
+local config = {
+    -- Menu Settings
+    menuKey = Enum.KeyCode.F1,
+    menuPosition = UDim2.new(0.5, -350, 0.5, -300),
+    menuSize = UDim2.new(0, 750, 0, 650),
+    theme = {
+        background = Color3.fromRGB(5, 5, 15),
+        panel = Color3.fromRGB(15, 15, 30),
+        accent = Color3.fromRGB(0, 255, 0),
+        text = Color3.fromRGB(210, 210, 220),
+        success = Color3.fromRGB(30, 255, 80),
+        danger = Color3.fromRGB(255, 30, 50),
+        warning = Color3.fromRGB(255, 180, 0),
+        secondary = Color3.fromRGB(25, 25, 45),
+    },
+    
+    -- Aim Settings
+    aimEnabled = true,
+    aimPart = "Head",
+    aimSmoothness = 0.02,
+    aimFov = 180,
+    aimDistance = 1000,
+    aimPrediction = 5.0,
+    aimVisibilityCheck = true,
+    aimTeamCheck = false,
+    silentAim = true,
+    silentRage = true,
+    silentAimMethod = "Camera",
+    triggerBot = true,
+    triggerBotDelay = 0.005,
+    aimKey = Enum.KeyCode.RightShift,
+    aimMode = "Toggle",
+    aimPriority = "Distance",
+    aimAtClosestToCrosshair = true,
+    alwaysHeadshot = true,
+    predictionMultiplier = 4.0,
+    preFireMode = true,
+    
+    -- ESP Settings
+    espEnabled = true,
+    espName = true,
+    espHealth = true,
+    espHealthBar = true,
+    espLine = true,
+    espBox = true,
+    espTeamCheck = false,
+    espDistance = true,
+    espChams = true,
+    espSkeleton = true,
+    espTracers = true,
+    espWeapon = true,
+    espOffscreen = true,
+    espCustomColors = true,
+    espBoxes2D = true,
+    espBoxes3D = true,
+    nameTags = true,
+    
+    -- Combat Settings
+    autoShoot = true,
+    shootDelay = 0.005,
+    weaponType = "Auto",
+    noStopShooting = true,
+    autoReload = true,
+    fastReload = true,
+    noRecoil = true,
+    noSpread = true,
+    wallbang = true,
+    rapidFire = true,
+    autoHeal = true,
+    autoArmor = true,
+    killAura = true,
+    criticalHits = true,
+    
+    -- Tele Kill Settings
+    teleKill = true,
+    teleKillMode = "Pull",
+    teleKillDistance = 5,
+    teleKillCooldown = 0.3,
+    teleKillKey = Enum.KeyCode.T,
+    teleKillAll = true,
+    
+    -- Movement Settings
+    speedHack = true,
+    speedMultiplier = 5.0,
+    bHop = true,
+    fly = true,
+    infiniteJump = true,
+    noFallDamage = true,
+    antiAim = true,
+    antiAimMode = "Jitter",
+    noclip = true,
+    superJump = true,
+    airWalk = true,
+    speedBoost = true,
+    
+    -- Visual Settings
+    customFov = true,
+    fovValue = 120,
+    thirdPerson = false,
+    crosshair = true,
+    fullbright = true,
+    removeFog = true,
+    customSky = true,
+    customTime = true,
+    removeShadows = true,
+    espBoxes2D = true,
+    espBoxes3D = true,
+    nameTags = true,
+    
+    -- Utility Settings
+    autoRespawn = true,
+    chatSpam = true,
+    chatSpamMessage = "0xGREEN ULTIMATE MAX PROFESSIONAL DOMINATING!",
+    playerList = true,
+    notifications = true,
+    serverHop = true,
+    rejoinGame = true,
+    fpsCounter = true,
+    pingDisplay = true,
+    autoClicker = true,
+    macroRecorder = true,
+    
+    -- Protection Settings
+    antiKick = true,
+    antiBan = true,
+    antiTeleport = true,
+    antiVoid = true,
+    antiStun = true,
+    
+    -- Remote Settings
+    useServerSide = true,
+    
+    -- Hotkeys
+    hotkeys = {
+        toggleAim = Enum.KeyCode.RightShift,
+        toggleEsp = Enum.KeyCode.RightControl,
+        toggleSpeed = Enum.KeyCode.Z,
+        toggleFly = Enum.KeyCode.X,
+        toggleBHop = Enum.KeyCode.C,
+        toggleTrigger = Enum.KeyCode.V,
+        toggleNoclip = Enum.KeyCode.N,
+        toggleKillAura = Enum.KeyCode.K,
+        toggleRapidFire = Enum.KeyCode.R,
+        toggleAutoClicker = Enum.KeyCode.B,
+        serverHop = Enum.KeyCode.H,
+        rejoinGame = Enum.KeyCode.J,
+        reloadConfig = Enum.KeyCode.RightAlt,
+    }
+}
+
+-- State
+local state = {
+    menuOpen = true,
+    currentTarget = nil,
+    espObjects = {},
+    teleKillCooldownActive = false,
+    reloading = false,
+    silentRageActive = false,
+    originalCameraCFrame = nil,
+    originalWalkSpeed = 16,
+    originalJumpPower = 50,
+    originalFov = 70,
+    isFlying = false,
+    flyVelocity = Vector3.new(0, 0, 0),
+    antiAimAngle = 0,
+    playerListButtons = {},
+    crosshairDrawing = nil,
+    fpsCounter = nil,
+    pingDisplay = nil,
+    macroRecording = false,
+    macroActions = {},
+    isNoclipping = false,
+    killAuraActive = false,
+    lastKillAuraTime = 0,
+    customSkyInstance = nil,
+    originalLightingSettings = {},
+    isSpeedBoosting = false,
+    lastMacroAction = 0,
+    macroPlayback = false,
+    macroPlaybackActions = {},
+    macroPlaybackIndex = 1,
+    lastServerHop = 0,
+    lastRejoin = 0,
+    lastChatSpam = 0,
+    lastAutoHeal = 0,
+    lastAutoArmor = 0,
+    lastAutoRespawn = 0,
+    lastAntiVoidCheck = 0,
+    lastAntiStunCheck = 0,
+    lastAntiTeleportCheck = 0,
+    lastAntiKickCheck = 0,
+    lastAntiBanCheck = 0,
+    lastAutoClick = 0,
+    lastKillAuraCheck = 0,
+    lastTriggerBotCheck = 0,
+    lastAimbotCheck = 0,
+    lastEspUpdate = 0,
+    lastVisualUpdate = 0,
+    lastMovementUpdate = 0,
+    lastUtilityUpdate = 0,
+    lastProtectionUpdate = 0,
+    lastRemoteCheck = 0,
+    preFireTargets = {},
+}
+
+-- Drawing Objects
+local drawings = {
+    fov = Drawing.new("Circle"),
+    esp = {},
+    chams = {},
+    skeleton = {},
+    tracers = {},
+    offscreen = {},
+    boxes2D = {},
+    boxes3D = {},
+    nameTags = {},
+}
+
+-- Initialize FOV Circle
+drawings.fov.Color = config.theme.accent
+drawings.fov.Thickness = 3.0
+drawings.fov.NumSides = 50
+drawings.fov.Radius = config.aimFov
+drawings.fov.Visible = false
+drawings.fov.Filled = false
+drawings.fov.Transparency = 0.5
+drawings.fov.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+-- Utility Functions
+local function notify(title, text, duration)
+    if not config.notifications then return end
+    StarterGui:SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = duration or 3
+    })
+    print("[0xGREEN] " .. title .. ": " .. text)
+end
+
+local function debugLog(message)
+    print("[0xGREEN DEBUG] " .. message)
+end
+
+local function isTeammate(player)
+    if not config.espTeamCheck then return false end
+    return LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team
+end
+
+local function isVisible(targetPart)
+    if not config.aimVisibilityCheck then return true end
+    
+    local origin = Camera.CFrame.Position
+    local targetPos = targetPart.Position
+    local direction = (targetPos - origin).Unit
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    local result = Workspace:Raycast(origin, direction * (targetPos - origin).Magnitude, raycastParams)
+    return not result or result.Instance:IsDescendantOf(targetPart.Parent)
+end
+
+local function getTargetPart(character)
+    -- Always Headshot mode overrides config
+    if config.alwaysHeadshot and character:FindFirstChild("Head") then
+        return character.Head
+    elseif config.aimPart == "Head" and character:FindFirstChild("Head") then
+        return character.Head
+    elseif config.aimPart == "UpperTorso" and character:FindFirstChild("UpperTorso") then
+        return character.UpperTorso
+    elseif config.aimPart == "HumanoidRootPart" and character:FindFirstChild("HumanoidRootPart") then
+        return character.HumanoidRootPart
+    else
+        return character:FindFirstChild("Head") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("HumanoidRootPart")
+    end
+end
+
+local function predictPosition(player, part)
+    if not player.Character then return part.Position end
+    
+    local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return part.Position end
+    
+    local velocity = rootPart.Velocity
+    local timeToTarget = (part.Position - Camera.CFrame.Position).Magnitude / 10000
+    -- Enhanced prediction for Silent Rage
+    if config.silentRage then
+        -- Predict where enemy will be before they appear
+        return part.Position + (velocity * timeToTarget * config.aimPrediction * config.predictionMultiplier)
+    else
+        return part.Position + (velocity * timeToTarget * config.aimPrediction)
+    end
+end
+
+-- Remote Functions
+local function useRemote(remoteType, remoteName, ...)
+    if not config.useServerSide then
+        debugLog("Server-side features disabled")
+        return false
+    end
+    
+    if remoteType == "Event" then
+        if remotes.Events[remoteName] then
+            debugLog("Using Remote Event: " .. remoteName)
+            remotes.Events[remoteName]:FireServer(...)
+            return true
+        else
+            debugLog("Remote Event not found: " .. remoteName)
+            return false
+        end
+    elseif remoteType == "Function" then
+        if remotes.Functions[remoteName] then
+            debugLog("Using Remote Function: " .. remoteName)
+            return remotes.Functions[remoteName]:InvokeServer(...)
+        else
+            debugLog("Remote Function not found: " .. remoteName)
+            return false
+        end
+    end
+    
+    return false
+end
+
+-- ESP Functions
+local function createESP(player)
+    drawings.esp[player] = {}
+    
+    -- Name ESP
+    if config.espName then
+        drawings.esp[player].name = Drawing.new("Text")
+        drawings.esp[player].name.Color = Color3.new(1, 1, 1)
+        drawings.esp[player].name.Size = 16
+        drawings.esp[player].name.Center = true
+        drawings.esp[player].name.Outline = true
+        drawings.esp[player].name.Visible = false
+    end
+    
+    -- Health ESP
+    if config.espHealth then
+        drawings.esp[player].health = Drawing.new("Text")
+        drawings.esp[player].health.Color = Color3.fromRGB(0, 255, 0)
+        drawings.esp[player].health.Size = 14
+        drawings.esp[player].health.Center = true
+        drawings.esp[player].health.Outline = true
+        drawings.esp[player].health.Visible = false
+    end
+    
+    -- Health Bar ESP
+    if config.espHealthBar then
+        drawings.esp[player].healthBarBg = Drawing.new("Square")
+        drawings.esp[player].healthBarBg.Color = Color3.fromRGB(50, 50, 50)
+        drawings.esp[player].healthBarBg.Thickness = 1
+        drawings.esp[player].healthBarBg.Filled = true
+        drawings.esp[player].healthBarBg.Visible = false
+        
+        drawings.esp[player].healthBar = Drawing.new("Square")
+        drawings.esp[player].healthBar.Color = Color3.fromRGB(0, 255, 0)
+        drawings.esp[player].healthBar.Thickness = 1
+        drawings.esp[player].healthBar.Filled = true
+        drawings.esp[player].healthBar.Visible = false
+    end
+    
+    -- Distance ESP
+    if config.espDistance then
+        drawings.esp[player].distance = Drawing.new("Text")
+        drawings.esp[player].distance.Color = Color3.fromRGB(255, 255, 0)
+        drawings.esp[player].distance.Size = 14
+        drawings.esp[player].distance.Center = true
+        drawings.esp[player].distance.Outline = true
+        drawings.esp[player].distance.Visible = false
+    end
+    
+    -- Weapon ESP
+    if config.espWeapon then
+        drawings.esp[player].weapon = Drawing.new("Text")
+        drawings.esp[player].weapon.Color = Color3.fromRGB(255, 100, 255)
+        drawings.esp[player].weapon.Size = 14
+        drawings.esp[player].weapon.Center = true
+        drawings.esp[player].weapon.Outline = true
+        drawings.esp[player].weapon.Visible = false
+    end
+    
+    -- Line ESP
+    if config.espLine then
+        drawings.esp[player].line = Drawing.new("Line")
+        drawings.esp[player].line.Color = Color3.new(1, 1, 1)
+        drawings.esp[player].line.Thickness = 1.5
+        drawings.esp[player].line.Transparency = 0.7
+        drawings.esp[player].line.Visible = false
+    end
+    
+    -- Box ESP
+    if config.espBox then
+        drawings.esp[player].box = Drawing.new("Square")
+        drawings.esp[player].box.Color = Color3.new(1, 1, 1)
+        drawings.esp[player].box.Thickness = 1.5
+        drawings.esp[player].box.Transparency = 0.7
+        drawings.esp[player].box.Filled = false
+        drawings.esp[player].box.Visible = false
+    end
+    
+    -- Tracers ESP
+    if config.espTracers then
+        drawings.tracers[player] = Drawing.new("Line")
+        drawings.tracers[player].Color = Color3.fromRGB(0, 255, 0)
+        drawings.tracers[player].Thickness = 1
+        drawings.tracers[player].Transparency = 0.5
+        drawings.tracers[player].Visible = false
+    end
+    
+    -- Offscreen ESP
+    if config.espOffscreen then
+        drawings.offscreen[player] = Drawing.new("Triangle")
+        drawings.offscreen[player].Color = Color3.fromRGB(255, 0, 0)
+        drawings.offscreen[player].Filled = true
+        drawings.offscreen[player].Transparency = 0.7
+        drawings.offscreen[player].Visible = false
+    end
+    
+    -- 2D Boxes
+    if config.espBoxes2D then
+        drawings.boxes2D[player] = {
+            top = Drawing.new("Line"),
+            bottom = Drawing.new("Line"),
+            left = Drawing.new("Line"),
+            right = Drawing.new("Line")
+        }
+        
+        for _, line in pairs(drawings.boxes2D[player]) do
+            line.Color = Color3.fromRGB(0, 255, 0)
+            line.Thickness = 1
+            line.Transparency = 0.7
+            line.Visible = false
+        end
+    end
+    
+    -- Chams ESP
+    if config.espChams then
+        for _, part in pairs(player.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                local box = Instance.new("BoxHandleAdornment")
+                box.Size = part.Size
+                box.Color3 = Color3.fromRGB(0, 255, 0)
+                box.Transparency = 0.3
+                box.AlwaysOnTop = true
+                box.ZIndex = 10
+                box.Adornee = part
+                box.Parent = CoreGui
+                
+                drawings.chams[player] = drawings.chams[player] or {}
+                table.insert(drawings.chams[player], box)
+            end
+        end
+    end
+    
+    -- Skeleton ESP
+    if config.espSkeleton then
+        drawings.skeleton[player] = {}
+        local connections = {
+            {"Head", "UpperTorso"},
+            {"UpperTorso", "LowerTorso"},
+            {"UpperTorso", "LeftUpperArm"},
+            {"UpperTorso", "RightUpperArm"},
+            {"LeftUpperArm", "LeftLowerArm"},
+            {"RightUpperArm", "RightLowerArm"},
+            {"LowerTorso", "LeftUpperLeg"},
+            {"LowerTorso", "RightUpperLeg"},
+            {"LeftUpperLeg", "LeftLowerLeg"},
+            {"RightUpperLeg", "RightLowerLeg"}
+        }
+        
+        for _, connection in pairs(connections) do
+            local line = Drawing.new("Line")
+            line.Color = Color3.fromRGB(0, 255, 0)
+            line.Thickness = 1
+            line.Transparency = 0.7
+            line.Visible = false
+            table.insert(drawings.skeleton[player], {line = line, connection = connection})
+        end
+    end
+    
+    -- 3D Boxes
+    if config.espBoxes3D then
+        drawings.boxes3D[player] = {}
+        for i = 1, 12 do
+            local line = Drawing.new("Line")
+            line.Color = Color3.fromRGB(255, 0, 0)
+            line.Thickness = 1
+            line.Transparency = 0.7
+            line.Visible = false
+            table.insert(drawings.boxes3D[player], line)
+        end
+    end
+    
+    -- Name Tags
+    if config.nameTags then
+        drawings.nameTags[player] = Drawing.new("Text")
+        drawings.nameTags[player].Color = Color3.fromRGB(255, 255, 255)
+        drawings.nameTags[player].Size = 14
+        drawings.nameTags[player].Center = true
+        drawings.nameTags[player].Outline = true
+        drawings.nameTags[player].Visible = false
+    end
+end
+
+local function updateESP()
+    local currentTime = tick()
+    if currentTime - state.lastEspUpdate < 0.05 then return end
+    state.lastEspUpdate = currentTime
+    
+    for player, espObjects in pairs(drawings.esp) do
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            
+            if rootPart and head and humanoid then
+                local vector, onScreen = Camera:WorldToViewportPoint(head.Position)
+                
+                if onScreen and not isTeammate(player) then
+                    -- Update Name ESP
+                    if espObjects.name then
+                        espObjects.name.Position = Vector2.new(vector.X, vector.Y - 25)
+                        espObjects.name.Text = player.Name
+                        espObjects.name.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Health ESP
+                    if espObjects.health then
+                        espObjects.health.Position = Vector2.new(vector.X, vector.Y - 10)
+                        espObjects.health.Text = math.floor(humanoid.Health) .. "/" .. humanoid.MaxHealth
+                        espObjects.health.Color = humanoid.Health > 50 and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+                        espObjects.health.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Health Bar ESP
+                    if espObjects.healthBarBg and espObjects.healthBar then
+                        local barWidth = 40
+                        local barHeight = 6
+                        local healthPercent = humanoid.Health / humanoid.MaxHealth
+                        
+                        espObjects.healthBarBg.Size = Vector2.new(barWidth, barHeight)
+                        espObjects.healthBarBg.Position = Vector2.new(vector.X - barWidth/2, vector.Y + 10)
+                        espObjects.healthBarBg.Visible = config.espEnabled
+                        
+                        espObjects.healthBar.Size = Vector2.new(barWidth * healthPercent, barHeight)
+                        espObjects.healthBar.Position = Vector2.new(vector.X - barWidth/2, vector.Y + 10)
+                        espObjects.healthBar.Color = healthPercent > 0.5 and Color3.fromRGB(0, 255, 0) or 
+                                                   healthPercent > 0.25 and Color3.fromRGB(255, 255, 0) or 
+                                                   Color3.fromRGB(255, 0, 0)
+                        espObjects.healthBar.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Distance ESP
+                    if espObjects.distance then
+                        local distance = math.floor((rootPart.Position - Camera.CFrame.Position).Magnitude)
+                        espObjects.distance.Position = Vector2.new(vector.X, vector.Y + 20)
+                        espObjects.distance.Text = distance .. "m"
+                        espObjects.distance.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Weapon ESP
+                    if espObjects.weapon then
+                        local tool = player.Character:FindFirstChildOfClass("Tool")
+                        if tool then
+                            espObjects.weapon.Position = Vector2.new(vector.X, vector.Y + 35)
+                            espObjects.weapon.Text = tool.Name
+                            espObjects.weapon.Visible = config.espEnabled
+                        else
+                            espObjects.weapon.Visible = false
+                        end
+                    end
+                    
+                    -- Update Line ESP
+                    if espObjects.line then
+                        espObjects.line.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        espObjects.line.To = Vector2.new(vector.X, vector.Y)
+                        espObjects.line.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Box ESP
+                    if espObjects.box then
+                        local size = (head.Position - rootPart.Position).Magnitude * 2
+                        espObjects.box.Size = Vector2.new(size, size * 1.5)
+                        espObjects.box.Position = Vector2.new(vector.X - size/2, vector.Y - size * 0.75)
+                        espObjects.box.Visible = config.espEnabled
+                    end
+                    
+                    -- Update Tracers ESP
+                    if drawings.tracers[player] then
+                        drawings.tracers[player].From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        drawings.tracers[player].To = Vector2.new(vector.X, vector.Y)
+                        drawings.tracers[player].Visible = config.espEnabled
+                    end
+                    
+                    -- Update 2D Boxes
+                    if drawings.boxes2D[player] then
+                        local size = (head.Position - rootPart.Position).Magnitude * 2
+                        local topLeft = Vector2.new(vector.X - size/2, vector.Y - size)
+                        local topRight = Vector2.new(vector.X + size/2, vector.Y - size)
+                        local bottomLeft = Vector2.new(vector.X - size/2, vector.Y + size/2)
+                        local bottomRight = Vector2.new(vector.X + size/2, vector.Y + size/2)
+                        
+                        drawings.boxes2D[player].top.From = topLeft
+                        drawings.boxes2D[player].top.To = topRight
+                        drawings.boxes2D[player].bottom.From = bottomLeft
+                        drawings.boxes2D[player].bottom.To = bottomRight
+                        drawings.boxes2D[player].left.From = topLeft
+                        drawings.boxes2D[player].left.To = bottomLeft
+                        drawings.boxes2D[player].right.From = topRight
+                        drawings.boxes2D[player].right.To = bottomRight
+                        
+                        for _, line in pairs(drawings.boxes2D[player]) do
+                            line.Visible = config.espEnabled
+                        end
+                    end
+                    
+                    -- Update Skeleton ESP
+                    if drawings.skeleton[player] then
+                        for _, skeletonData in pairs(drawings.skeleton[player]) do
+                            local part1 = player.Character:FindFirstChild(skeletonData.connection[1])
+                            local part2 = player.Character:FindFirstChild(skeletonData.connection[2])
+                            
+                            if part1 and part2 then
+                                local pos1, onScreen1 = Camera:WorldToViewportPoint(part1.Position)
+                                local pos2, onScreen2 = Camera:WorldToViewportPoint(part2.Position)
+                                
+                                if onScreen1 and onScreen2 then
+                                    skeletonData.line.From = Vector2.new(pos1.X, pos1.Y)
+                                    skeletonData.line.To = Vector2.new(pos2.X, pos2.Y)
+                                    skeletonData.line.Visible = config.espEnabled
+                                else
+                                    skeletonData.line.Visible = false
+                                end
+                            else
+                                skeletonData.line.Visible = false
+                            end
+                        end
+                    end
+                    
+                    -- Update 3D Boxes
+                    if drawings.boxes3D[player] then
+                        local cf = rootPart.CFrame
+                        local size = rootPart.Size
+                        local corners = {
+                            cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2),
+                            cf * CFrame.new(size.X/2, -size.Y/2, -size.Z/2),
+                            cf * CFrame.new(size.X/2, size.Y/2, -size.Z/2),
+                            cf * CFrame.new(-size.X/2, size.Y/2, -size.Z/2),
+                            cf * CFrame.new(-size.X/2, -size.Y/2, size.Z/2),
+                            cf * CFrame.new(size.X/2, -size.Y/2, size.Z/2),
+                            cf * CFrame.new(size.X/2, size.Y/2, size.Z/2),
+                            cf * CFrame.new(-size.X/2, size.Y/2, size.Z/2)
+                        }
+                        
+                        local lines = {
+                            {1, 2}, {2, 3}, {3, 4}, {4, 1},
+                            {5, 6}, {6, 7}, {7, 8}, {8, 5},
+                            {1, 5}, {2, 6}, {3, 7}, {4, 8}
+                        }
+                        
+                        for i, lineData in ipairs(lines) do
+                            local pos1 = Camera:WorldToViewportPoint(corners[lineData[1]].Position)
+                            local pos2 = Camera:WorldToViewportPoint(corners[lineData[2]].Position)
+                            
+                            if pos1.Z > 0 and pos2.Z > 0 then
+                                drawings.boxes3D[player][i].From = Vector2.new(pos1.X, pos1.Y)
+                                drawings.boxes3D[player][i].To = Vector2.new(pos2.X, pos2.Y)
+                                drawings.boxes3D[player][i].Visible = config.espEnabled
+                            else
+                                drawings.boxes3D[player][i].Visible = false
+                            end
+                        end
+                    end
+                    
+                    -- Update Name Tags
+                    if drawings.nameTags[player] then
+                        drawings.nameTags[player].Position = Vector2.new(vector.X, vector.Y - 40)
+                        drawings.nameTags[player].Text = player.Name
+                        drawings.nameTags[player].Visible = config.espEnabled
+                    end
+                else
+                    -- Hide ESP if not on screen or is teammate
+                    for _, drawing in pairs(espObjects) do
+                        if drawing.Visible then
+                            drawing.Visible = false
+                        end
+                    end
+                    
+                    -- Hide Skeleton ESP
+                    if drawings.skeleton[player] then
+                        for _, skeletonData in pairs(drawings.skeleton[player]) do
+                            skeletonData.line.Visible = false
+                        end
+                    end
+                    
+                    -- Hide Tracers ESP
+                    if drawings.tracers[player] then
+                        drawings.tracers[player].Visible = false
+                    end
+                    
+                    -- Hide 2D Boxes
+                    if drawings.boxes2D[player] then
+                        for _, line in pairs(drawings.boxes2D[player]) do
+                            line.Visible = false
+                        end
+                    end
+                    
+                    -- Hide 3D Boxes
+                    if drawings.boxes3D[player] then
+                        for _, line in pairs(drawings.boxes3D[player]) do
+                            line.Visible = false
+                        end
+                    end
+                    
+                    -- Hide Name Tags
+                    if drawings.nameTags[player] then
+                        drawings.nameTags[player].Visible = false
+                    end
+                    
+                    -- Update Offscreen ESP
+                    if drawings.offscreen[player] then
+                        local screenPos = Camera:WorldToScreenPoint(head.Position)
+                        local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                        local angle = math.atan2(screenPos.Y - screenCenter.Y, screenPos.X - screenCenter.X)
+                        local distance = (screenPos - screenCenter).Magnitude
+                        
+                        if distance > math.min(Camera.ViewportSize.X, Camera.ViewportSize.Y) / 2 then
+                            local radius = 100
+                            local x = screenCenter.X + math.cos(angle) * radius
+                            local y = screenCenter.Y + math.sin(angle) * radius
+                            
+                            local size = 10
+                            drawings.offscreen[player].PointA = Vector2.new(x, y - size)
+                            drawings.offscreen[player].PointB = Vector2.new(x - size, y + size)
+                            drawings.offscreen[player].PointC = Vector2.new(x + size, y + size)
+                            drawings.offscreen[player].Visible = config.espEnabled
+                        else
+                            drawings.offscreen[player].Visible = false
+                        end
+                    end
+                end
+            else
+                -- Hide ESP if missing required parts
+                for _, drawing in pairs(espObjects) do
+                    if drawing.Visible then
+                        drawing.Visible = false
+                    end
+                end
+                
+                -- Hide Skeleton ESP
+                if drawings.skeleton[player] then
+                    for _, skeletonData in pairs(drawings.skeleton[player]) do
+                        skeletonData.line.Visible = false
+                    end
+                end
+                
+                -- Hide Tracers ESP
+                if drawings.tracers[player] then
+                    drawings.tracers[player].Visible = false
+                end
+                
+                -- Hide 2D Boxes
+                if drawings.boxes2D[player] then
+                    for _, line in pairs(drawings.boxes2D[player]) do
+                        line.Visible = false
+                    end
+                end
+                
+                -- Hide 3D Boxes
+                if drawings.boxes3D[player] then
+                    for _, line in pairs(drawings.boxes3D[player]) do
+                        line.Visible = false
+                    end
+                end
+                
+                -- Hide Name Tags
+                if drawings.nameTags[player] then
+                    drawings.nameTags[player].Visible = false
+                end
+                
+                -- Hide Offscreen ESP
+                if drawings.offscreen[player] then
+                    drawings.offscreen[player].Visible = false
+                end
+            end
+        else
+            -- Clean up if player left or character doesn't exist
+            for _, drawing in pairs(espObjects) do
+                drawing:Remove()
+            end
+            drawings.esp[player] = nil
+            
+            -- Clean up Chams
+            if drawings.chams[player] then
+                for _, box in pairs(drawings.chams[player]) do
+                    box:Destroy()
+                end
+                drawings.chams[player] = nil
+            end
+            
+            -- Clean up Skeleton
+            if drawings.skeleton[player] then
+                for _, skeletonData in pairs(drawings.skeleton[player]) do
+                    skeletonData.line:Remove()
+                end
+                drawings.skeleton[player] = nil
+            end
+            
+            -- Clean up Tracers
+            if drawings.tracers[player] then
+                drawings.tracers[player]:Remove()
+                drawings.tracers[player] = nil
+            end
+            
+            -- Clean up Offscreen
+            if drawings.offscreen[player] then
+                drawings.offscreen[player]:Remove()
+                drawings.offscreen[player] = nil
+            end
+            
+            -- Clean up 2D Boxes
+            if drawings.boxes2D[player] then
+                for _, line in pairs(drawings.boxes2D[player]) do
+                    line:Remove()
+                end
+                drawings.boxes2D[player] = nil
+            end
+            
+            -- Clean up 3D Boxes
+            if drawings.boxes3D[player] then
+                for _, line in pairs(drawings.boxes3D[player]) do
+                    line:Remove()
+                end
+                drawings.boxes3D[player] = nil
+            end
+            
+            -- Clean up Name Tags
+            if drawings.nameTags[player] then
+                drawings.nameTags[player]:Remove()
+                drawings.nameTags[player] = nil
+            end
+        end
+    end
+end
+
+-- Aimbot Functions
+local function getClosestPlayer()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local targetPart = getTargetPart(player.Character)
+            
+            if targetPart and isVisible(targetPart) and not isTeammate(player) then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                if onScreen then
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                    if distance < config.aimFov and distance < closestDistance then
+                        closestDistance = distance
+                        closestPlayer = player
+                    end
+                end
+            end
+        end
+    end
+    
+    return closestPlayer
+end
+
+-- Enhanced Silent Aim Implementation with Always Headshot
+local function aimAt(target)
+    if not target or not target.Character then return end
+    
+    local targetPart = getTargetPart(target.Character)
+    if not targetPart then return end
+    
+    local predictedPos = predictPosition(target, targetPart)
+    
+    if config.silentAim then
+        -- Enhanced Silent Aim with multiple methods
+        if config.silentAimMethod == "Camera" then
+            -- Method 1: Camera manipulation (more reliable)
+            state.originalCameraCFrame = Camera.CFrame
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+            
+            -- Instantly set camera to target
+            Camera.CFrame = targetCFrame
+            
+            -- Fire weapon
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+            wait(config.shootDelay)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+            
+            -- Reset camera immediately
+            Camera.CFrame = state.originalCameraCFrame
+            
+            -- Silent Rage additional shots
+            if config.silentRage then
+                for i = 1, 5 do
+                    Camera.CFrame = targetCFrame
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+                    wait(config.shootDelay / 5)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+                    Camera.CFrame = state.originalCameraCFrame
+                end
+            end
+        else
+            -- Method 2: Mouse position manipulation (alternative)
+            local mousePos = UserInputService:GetMouseLocation()
+            local targetPos = Camera:WorldToViewportPoint(predictedPos)
+            local offset = Vector2.new(targetPos.X - mousePos.X, targetPos.Y - mousePos.Y)
+            
+            -- Calculate aim point
+            local aimPoint = Vector2.new(mousePos.X + offset.X, mousePos.Y + offset.Y)
+            
+            -- Fire at predicted position
+            VirtualInputManager:SendMouseButtonEvent(aimPoint.X, aimPoint.Y, 0, true, game)
+            wait(config.shootDelay)
+            VirtualInputManager:SendMouseButtonEvent(aimPoint.X, aimPoint.Y, 0, false, game)
+            
+            -- Silent Rage additional shots
+            if config.silentRage then
+                for i = 1, 5 do
+                    VirtualInputManager:SendMouseButtonEvent(aimPoint.X, aimPoint.Y, 0, true, game)
+                    wait(config.shootDelay / 5)
+                    VirtualInputManager:SendMouseButtonEvent(aimPoint.X, aimPoint.Y, 0, false, game)
+                end
+            end
+        end
+    else
+        -- Regular aim - moves camera
+        local currentCFrame = Camera.CFrame
+        local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+        
+        -- Smooth aiming
+        local newCFrame = currentCFrame:Lerp(targetCFrame, 1 - config.aimSmoothness)
+        Camera.CFrame = newCFrame
+        
+        -- Auto shoot
+        if config.autoShoot then
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+            wait(config.shootDelay)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+        end
+    end
+end
+
+-- Pre-Fire Mode Implementation
+local function preFireCheck()
+    if not config.preFireMode then return end
+    
+    -- Check for enemies about to come into view
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local targetPart = getTargetPart(player.Character)
+            
+            if targetPart and not isTeammate(player) then
+                -- Calculate if player is about to come into view
+                local direction = (targetPart.Position - Camera.CFrame.Position).Unit
+                local distance = (targetPart.Position - Camera.CFrame.Position).Magnitude
+                
+                -- If player is close but not visible, pre-fire
+                if distance < 200 and not isVisible(targetPart) then
+                    state.preFireTargets[player] = tick()
+                elseif state.preFireTargets[player] and isVisible(targetPart) then
+                    -- Player is now visible, fire immediately
+                    aimAt(player)
+                    state.preFireTargets[player] = nil
+                end
+            end
+        end
+    end
+    
+    -- Clean up old pre-fire targets
+    for player, time in pairs(state.preFireTargets) do
+        if tick() - time > 2 then
+            state.preFireTargets[player] = nil
+        end
+    end
+end
+
+-- Trigger Bot
+local function triggerBot()
+    if not config.triggerBot then return end
+    
+    local mousePos = UserInputService:GetMouseLocation()
+    
+    -- Check if mouse is over a player
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local targetPart = getTargetPart(player.Character)
+            
+            if targetPart and not isTeammate(player) then
+                local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                if onScreen then
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                    if distance < 15 then -- Within crosshair range
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+                        wait(config.triggerBotDelay)
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+                        break
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Kill Aura
+local function killAura()
+    if not config.killAura then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastKillAuraTime < 0.1 then return end
+    state.lastKillAuraTime = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local killRange = 20
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local targetRootPart = player.Character.HumanoidRootPart
+            local distance = (targetRootPart.Position - rootPart.Position).Magnitude
+            
+            if distance <= killRange and not isTeammate(player) then
+                -- Attack the player
+                local targetPart = getTargetPart(player.Character)
+                if targetPart then
+                    local predictedPos = predictPosition(player, targetPart)
+                    
+                    state.originalCameraCFrame = Camera.CFrame
+                    local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+                    Camera.CFrame = targetCFrame
+                    
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+                    wait(0.01)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+                    
+                    Camera.CFrame = state.originalCameraCFrame
+                end
+            end
+        end
+    end
+end
+
+-- Tele Kill Function with Remote Integration
+local function teleKillTarget()
+    if not config.teleKill or state.teleKillCooldownActive then return end
+    
+    if config.teleKillAll then
+        -- Kill all players
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                -- Use server-side kill if available
+                if not useRemote("Event", "Kill", player) then
+                    -- Fallback to client-side
+                    local targetCharacter = player.Character
+                    local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+                    local localCharacter = LocalPlayer.Character
+                    local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+                    
+                    if targetRootPart and localRootPart then
+                        -- Pull target to player
+                        local direction = (localRootPart.Position - targetRootPart.Position).Unit
+                        targetRootPart.CFrame = CFrame.new(localRootPart.Position - direction * config.teleKillDistance)
+                        
+                        -- Attack target immediately
+                        if config.autoShoot then
+                            local targetHead = targetCharacter:FindFirstChild("Head")
+                            if targetHead then
+                                local predictedPos = predictPosition(player, targetHead)
+                                
+                                state.originalCameraCFrame = Camera.CFrame
+                                local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+                                Camera.CFrame = targetCFrame
+                                
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+                                wait(0.005)
+                                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+                                
+                                Camera.CFrame = state.originalCameraCFrame
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        notify("Tele Kill", "All players targeted!")
+    else
+        -- Kill single target
+        if not state.currentTarget or not state.currentTarget.Character then return end
+        
+        -- Use server-side kill if available
+        if not useRemote("Event", "Kill", state.currentTarget) then
+            -- Fallback to client-side
+            local targetCharacter = state.currentTarget.Character
+            local targetRootPart = targetCharacter:FindFirstChild("HumanoidRootPart")
+            local localCharacter = LocalPlayer.Character
+            local localRootPart = localCharacter and localCharacter:FindFirstChild("HumanoidRootPart")
+            
+            if not targetRootPart or not localRootPart then return end
+            
+            -- Check if target is within distance
+            local distance = (targetRootPart.Position - localRootPart.Position).Magnitude
+            if distance > config.aimDistance then return end
+            
+            -- Create visual effect
+            local effectPart = Instance.new("Part")
+            effectPart.Size = Vector3.new(1, 1, 1)
+            effectPart.Color = Color3.fromRGB(0, 255, 0)
+            effectPart.Material = Enum.Material.Neon
+            effectPart.Anchored = true
+            effectPart.CanCollide = false
+            effectPart.Parent = Workspace
+            
+            -- Position effect at target or player based on mode
+            if config.teleKillMode == "Pull" then
+                effectPart.Position = targetRootPart.Position
+            else
+                effectPart.Position = localRootPart.Position
+            end
+            
+            -- Create expanding ring effect
+            local ring = Instance.new("Part")
+            ring.Size = Vector3.new(1, 0.2, 1)
+            ring.Color = Color3.fromRGB(0, 200, 0)
+            ring.Material = Enum.Material.Neon
+            ring.Anchored = true
+            ring.CanCollide = false
+            ring.CFrame = CFrame.new(effectPart.Position)
+            ring.Parent = Workspace
+            
+            -- Animate the ring
+            local tween = TweenService:Create(ring, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = Vector3.new(20, 0.2, 20),
+                Transparency = 1
+            })
+            tween:Play()
+            
+            -- Perform teleport based on mode
+            if config.teleKillMode == "Pull" then
+                -- Pull target to player
+                local direction = (localRootPart.Position - targetRootPart.Position).Unit
+                targetRootPart.CFrame = CFrame.new(localRootPart.Position - direction * config.teleKillDistance)
+            else
+                -- Push player to target
+                local direction = (targetRootPart.Position - localRootPart.Position).Unit
+                localRootPart.CFrame = CFrame.new(targetRootPart.Position - direction * config.teleKillDistance)
+            end
+            
+            -- Attack target immediately - HEADSHOT ONLY
+            if config.autoShoot then
+                local targetHead = targetCharacter:FindFirstChild("Head")
+                if targetHead then
+                    local predictedPos = predictPosition(state.currentTarget, targetHead)
+                    
+                    -- Use camera manipulation for reliable headshot
+                    state.originalCameraCFrame = Camera.CFrame
+                    local targetCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+                    Camera.CFrame = targetCFrame
+                    
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+                    wait(0.005)
+                    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+                    
+                    Camera.CFrame = state.originalCameraCFrame
+                end
+            end
+            
+            -- Set cooldown
+            state.teleKillCooldownActive = true
+            
+            -- Clean up effects
+            spawn(function()
+                wait(0.3)
+                effectPart:Destroy()
+                ring:Destroy()
+                
+                -- Reset cooldown after specified time
+                wait(config.teleKillCooldown - 0.3)
+                state.teleKillCooldownActive = false
+            end)
+        end
+        
+        notify("Tele Kill", "Target " .. config.teleKillMode .. "ed and headshotted!")
+    end
+end
+
+-- Function to check ammo and reload if needed
+local function checkAndReload()
+    if not config.autoReload or state.reloading then return end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    
+    -- Try to find ammo values in the tool
+    local ammo = tool:FindFirstChild("Ammo")
+    local maxAmmo = tool:FindFirstChild("MaxAmmo") or tool:FindFirstChild("AmmoMax")
+    
+    if ammo and maxAmmo then
+        if ammo.Value <= 0 then
+            state.reloading = true
+            notify("Auto Reload", "Reloading weapon...")
+            
+            -- Simulate reload key press (R)
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.R, false, game)
+            
+            -- Use fast reload if enabled
+            if config.fastReload then
+                wait(0.005) -- Almost instant reload
+            else
+                wait(0.1) -- Normal reload simulation
+            end
+            
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.R, false, game)
+            
+            -- Reset reloading state after reload time
+            spawn(function()
+                if config.fastReload then
+                    wait(0.1) -- Very short reload time
+                else
+                    wait(2.5) -- Normal reload time
+                end
+                state.reloading = false
+            end)
+        end
+    end
+end
+
+-- Auto Heal
+local function autoHeal()
+    if not config.autoHeal then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAutoHeal < 1 then return end
+    state.lastAutoHeal = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    if humanoid.Health < humanoid.MaxHealth * 0.3 then -- Heal when below 30% health
+        -- Try to find healing items
+        for _, item in ipairs(character:GetChildren()) do
+            if item:IsA("Tool") and (item.Name:lower():find("med") or item.Name:lower():find("health") or item.Name:lower():find("heal")) then
+                -- Use the healing item
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                wait(0.1)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                notify("Auto Heal", "Used healing item!")
+                break
+            end
+        end
+    end
+end
+
+-- Auto Armor
+local function autoArmor()
+    if not config.autoArmor then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAutoArmor < 1 then return end
+    state.lastAutoArmor = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- Check if player has armor equipped
+    local hasArmor = false
+    for _, item in ipairs(character:GetChildren()) do
+        if item:IsA("Tool") and (item.Name:lower():find("armor") or item.Name:lower():find("vest") or item.Name:lower():find("helmet")) then
+            hasArmor = true
+            break
+        end
+    end
+    
+    if not hasArmor then
+        -- Try to find armor in backpack
+        local backpack = LocalPlayer:FindFirstChild("Backpack")
+        if backpack then
+            for _, item in ipairs(backpack:GetChildren()) do
+                if item:IsA("Tool") and (item.Name:lower():find("armor") or item.Name:lower():find("vest") or item.Name:lower():find("helmet")) then
+                    -- Equip the armor
+                    humanoid:EquipTool(item)
+                    notify("Auto Armor", "Equipped armor!")
+                    break
+                end
+            end
+        end
+    end
+end
+
+-- Movement Functions
+local function handleMovement()
+    local currentTime = tick()
+    if currentTime - state.lastMovementUpdate < 0.05 then return end
+    state.lastMovementUpdate = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not rootPart then return end
+    
+    -- Speed Hack
+    if config.speedHack then
+        humanoid.WalkSpeed = state.originalWalkSpeed * config.speedMultiplier
+    else
+        humanoid.WalkSpeed = state.originalWalkSpeed
+    end
+    
+    -- Infinite Jump
+    if config.infiniteJump then
+        humanoid.JumpPower = state.originalJumpPower
+    else
+        humanoid.JumpPower = state.originalJumpPower
+    end
+    
+    -- No Fall Damage
+    if config.noFallDamage then
+        humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+    end
+    
+    -- Noclip
+    if config.noclip then
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    else
+        for _, part in ipairs(character:GetChildren()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+    end
+    
+    -- Super Jump
+    if config.superJump then
+        humanoid.JumpPower = 100
+    end
+    
+    -- Air Walk
+    if config.airWalk then
+        if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+            humanoid:ChangeState(Enum.HumanoidStateType.Running)
+        end
+    end
+    
+    -- Speed Boost
+    if config.speedBoost then
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+            humanoid.WalkSpeed = state.originalWalkSpeed * config.speedMultiplier * 1.5
+        end
+    end
+end
+
+-- Fly Function
+local function handleFly()
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    if config.fly then
+        if not state.isFlying then
+            state.isFlying = true
+            state.flyVelocity = Vector3.new(0, 0, 0)
+            
+            -- Create fly parts
+            local flyPart = Instance.new("Part")
+            flyPart.Size = Vector3.new(2, 1, 1)
+            flyPart.Transparency = 1
+            flyPart.Anchored = true
+            flyPart.CanCollide = false
+            flyPart.Parent = character
+            
+            -- Fly loop
+            spawn(function()
+                while state.isFlying and config.fly do
+                    -- Update fly velocity based on input
+                    state.flyVelocity = Vector3.new(0, 0, 0)
+                    
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                        state.flyVelocity = state.flyVelocity + Camera.CFrame.LookVector * config.speedMultiplier
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                        state.flyVelocity = state.flyVelocity - Camera.CFrame.LookVector * config.speedMultiplier
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                        state.flyVelocity = state.flyVelocity - Camera.CFrame.RightVector * config.speedMultiplier
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                        state.flyVelocity = state.flyVelocity + Camera.CFrame.RightVector * config.speedMultiplier
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                        state.flyVelocity = state.flyVelocity + Vector3.new(0, config.speedMultiplier, 0)
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+                        state.flyVelocity = state.flyVelocity - Vector3.new(0, config.speedMultiplier, 0)
+                    end
+                    
+                    -- Apply velocity
+                    rootPart.Velocity = state.flyVelocity
+                    
+                    wait(0.05)
+                end
+                
+                -- Clean up
+                if flyPart then
+                    flyPart:Destroy()
+                end
+            end)
+        end
+    else
+        state.isFlying = false
+    end
+end
+
+-- Bunny Hop
+local function handleBHop()
+    if not config.bHop then return end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    if humanoid:GetState() == Enum.HumanoidStateType.Landed then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end
+
+-- Anti Aim
+local function handleAntiAim()
+    if not config.antiAim then return end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    if config.antiAimMode == "Jitter" then
+        -- Jitter between random angles
+        state.antiAimAngle = state.antiAimAngle + math.random(-30, 30)
+        rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(state.antiAimAngle), 0)
+    elseif config.antiAimMode == "Spin" then
+        -- Spin continuously
+        state.antiAimAngle = (state.antiAimAngle + 10) % 360
+        rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(state.antiAimAngle), 0)
+    end
+end
+
+-- Visual Functions
+local function handleVisuals()
+    local currentTime = tick()
+    if currentTime - state.lastVisualUpdate < 0.1 then return end
+    state.lastVisualUpdate = currentTime
+    
+    -- Custom FOV
+    if config.customFov then
+        Camera.FieldOfView = config.fovValue
+    else
+        Camera.FieldOfView = state.originalFov
+    end
+    
+    -- Fullbright
+    if config.fullbright then
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.Brightness = 2
+    else
+        Lighting.Ambient = state.originalLightingSettings.Ambient or Color3.new(0, 0, 0)
+        Lighting.Brightness = state.originalLightingSettings.Brightness or 1
+    end
+    
+    -- Remove Fog
+    if config.removeFog then
+        Lighting.FogEnd = 100000
+    else
+        Lighting.FogEnd = state.originalLightingSettings.FogEnd or 1000
+    end
+    
+    -- Custom Sky
+    if config.customSky then
+        if not state.customSkyInstance then
+            state.customSkyInstance = Instance.new("Sky")
+            state.customSkyInstance.SkyboxBk = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.SkyboxDn = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.SkyboxFt = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.SkyboxLf = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.SkyboxRt = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.SkyboxUp = "http://www.roblox.com/asset/?id=159454299"
+            state.customSkyInstance.Parent = Lighting
+        end
+    else
+        if state.customSkyInstance then
+            state.customSkyInstance:Destroy()
+            state.customSkyInstance = nil
+        end
+    end
+    
+    -- Custom Time
+    if config.customTime then
+        Lighting.ClockTime = 12
+    else
+        Lighting.ClockTime = state.originalLightingSettings.ClockTime or 14
+    end
+    
+    -- Remove Shadows
+    if config.removeShadows then
+        Lighting.GlobalShadows = false
+    else
+        Lighting.GlobalShadows = state.originalLightingSettings.GlobalShadows or true
+    end
+    
+    -- Crosshair
+    if config.crosshair then
+        if not state.crosshairDrawing then
+            state.crosshairDrawing = Drawing.new("Crosshair")
+            state.crosshairDrawing.Color = config.theme.accent
+            state.crosshairDrawing.Thickness = 1
+            state.crosshairDrawing.Transparency = 0.5
+            state.crosshairDrawing.Visible = true
+        end
+        
+        state.crosshairDrawing.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    else
+        if state.crosshairDrawing then
+            state.crosshairDrawing:Remove()
+            state.crosshairDrawing = nil
+        end
+    end
+    
+    -- FPS Counter
+    if config.fpsCounter then
+        if not state.fpsCounter then
+            state.fpsCounter = Drawing.new("Text")
+            state.fpsCounter.Color = Color3.fromRGB(0, 255, 0)
+            state.fpsCounter.Size = 14
+            state.fpsCounter.Outline = true
+            state.fpsCounter.Visible = true
+        end
+        
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
+        state.fpsCounter.Text = "FPS: " .. fps
+        state.fpsCounter.Position = Vector2.new(10, 10)
+    else
+        if state.fpsCounter then
+            state.fpsCounter:Remove()
+            state.fpsCounter = nil
+        end
+    end
+    
+    -- Ping Display
+    if config.pingDisplay then
+        if not state.pingDisplay then
+            state.pingDisplay = Drawing.new("Text")
+            state.pingDisplay.Color = Color3.fromRGB(0, 255, 0)
+            state.pingDisplay.Size = 14
+            state.pingDisplay.Outline = true
+            state.pingDisplay.Visible = true
+        end
+        
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        state.pingDisplay.Text = "Ping: " .. ping .. "ms"
+        state.pingDisplay.Position = Vector2.new(10, 30)
+    else
+        if state.pingDisplay then
+            state.pingDisplay:Remove()
+            state.pingDisplay = nil
+        end
+    end
+end
+
+-- Utility Functions
+local function handleAutoRespawn()
+    if not config.autoRespawn then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAutoRespawn < 1 then return end
+    state.lastAutoRespawn = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    if humanoid.Health <= 0 then
+        -- Respawn the player
+        LocalPlayer:LoadCharacter()
+        notify("Auto Respawn", "Respawning player...")
+    end
+end
+
+local function handleChatSpam()
+    if not config.chatSpam then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastChatSpam < 5 then return end
+    state.lastChatSpam = currentTime
+    
+    -- Send chat message
+    ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(
+        config.chatSpamMessage,
+        "All"
+    )
+end
+
+local function handleServerHop()
+    if not config.serverHop then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastServerHop < 30 then return end
+    state.lastServerHop = currentTime
+    
+    -- Check if player count is low
+    if #Players:GetPlayers() < 5 then
+        notify("Server Hop", "Hopping to a new server...")
+        
+        -- Get current game place ID
+        local placeId = game.PlaceId
+        
+        -- Teleport to a new server
+        TeleportService:Teleport(placeId, LocalPlayer)
+    end
+end
+
+local function handleRejoinGame()
+    if not config.rejoinGame then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastRejoin < 30 then return end
+    state.lastRejoin = currentTime
+    
+    -- Rejoin the game
+    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    notify("Rejoin", "Rejoining game...")
+end
+
+local function handleAutoClicker()
+    if not config.autoClicker then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAutoClick < 0.1 then return end
+    state.lastAutoClick = currentTime
+    
+    -- Simulate mouse click
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game)
+    wait(0.01)
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game)
+end
+
+local function handleMacroRecorder()
+    if not config.macroRecorder then return end
+    
+    -- Toggle macro recording
+    if UserInputService:IsKeyDown(Enum.KeyCode.F2) then
+        state.macroRecording = not state.macroRecording
+        
+        if state.macroRecording then
+            state.macroActions = {}
+            notify("Macro Recorder", "Recording started...")
+        else
+            notify("Macro Recorder", "Recording stopped. " .. #state.macroActions .. " actions recorded.")
+        end
+        
+        wait(1) -- Debounce
+    end
+    
+    -- Record macro actions
+    if state.macroRecording then
+        local currentTime = tick()
+        if currentTime - state.lastMacroAction > 0.1 then
+            state.lastMacroAction = currentTime
+            
+            -- Record mouse position and clicks
+            local mousePos = UserInputService:GetMouseLocation()
+            local isMouseDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+            
+            table.insert(state.macroActions, {
+                time = currentTime,
+                mousePos = mousePos,
+                isMouseDown = isMouseDown
+            })
+        end
+    end
+    
+    -- Playback macro
+    if UserInputService:IsKeyDown(Enum.KeyCode.F3) and #state.macroActions > 0 then
+        if not state.macroPlayback then
+            state.macroPlayback = true
+            state.macroPlaybackActions = state.macroActions
+            state.macroPlaybackIndex = 1
+            
+            notify("Macro Recorder", "Playing back macro...")
+            
+            -- Playback loop
+            spawn(function()
+                while state.macroPlayback and state.macroPlaybackIndex <= #state.macroPlaybackActions do
+                    local action = state.macroPlaybackActions[state.macroPlaybackIndex]
+                    
+                    -- Move mouse to position
+                    VirtualInputManager:SendMouseMoveEvent(action.mousePos.X, action.mousePos.Y)
+                    
+                    -- Click if needed
+                    if action.isMouseDown then
+                        VirtualInputManager:SendMouseButtonEvent(action.mousePos.X, action.mousePos.Y, 0, true, game)
+                    else
+                        VirtualInputManager:SendMouseButtonEvent(action.mousePos.X, action.mousePos.Y, 0, false, game)
+                    end
+                    
+                    state.macroPlaybackIndex = state.macroPlaybackIndex + 1
+                    
+                    -- Wait for next action
+                    if state.macroPlaybackIndex <= #state.macroPlaybackActions then
+                        local nextAction = state.macroPlaybackActions[state.macroPlaybackIndex]
+                        local delay = nextAction.time - action.time
+                        wait(delay)
+                    end
+                end
+                
+                state.macroPlayback = false
+                notify("Macro Recorder", "Playback completed.")
+            end)
+            
+            wait(1) -- Debounce
+        end
+    end
+end
+
+-- Protection Functions
+local function handleAntiKick()
+    if not config.antiKick then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAntiKickCheck < 1 then return end
+    state.lastAntiKickCheck = currentTime
+    
+    -- Check if player is being kicked
+    if LocalPlayer.Parent == nil then
+        notify("Anti Kick", "Preventing kick...")
+        
+        -- Rejoin the game
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end
+end
+
+local function handleAntiBan()
+    if not config.antiBan then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAntiBanCheck < 1 then return end
+    state.lastAntiBanCheck = currentTime
+    
+    -- Check if player is being banned
+    if LocalPlayer.Parent == nil then
+        notify("Anti Ban", "Preventing ban...")
+        
+        -- Rejoin the game
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end
+end
+
+local function handleAntiTeleport()
+    if not config.antiTeleport then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAntiTeleportCheck < 0.1 then return end
+    state.lastAntiTeleportCheck = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Check if player is being teleported
+    local distance = (rootPart.Position - state.lastPosition).Magnitude
+    if distance > 100 then
+        notify("Anti Teleport", "Preventing teleport...")
+        
+        -- Teleport back to last position
+        rootPart.CFrame = CFrame.new(state.lastPosition)
+    end
+    
+    state.lastPosition = rootPart.Position
+end
+
+local function handleAntiVoid()
+    if not config.antiVoid then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAntiVoidCheck < 0.1 then return end
+    state.lastAntiVoidCheck = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Check if player is in void
+    if rootPart.Position.Y < -100 then
+        notify("Anti Void", "Preventing void kill...")
+        
+        -- Teleport to safe position
+        rootPart.CFrame = CFrame.new(0, 100, 0)
+    end
+end
+
+local function handleAntiStun()
+    if not config.antiStun then return end
+    
+    local currentTime = tick()
+    if currentTime - state.lastAntiStunCheck < 0.1 then return end
+    state.lastAntiStunCheck = currentTime
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    
+    -- Check if player is stunned
+    if humanoid:GetState() == Enum.HumanoidStateType.Ragdoll then
+        notify("Anti Stun", "Preventing stun...")
+        
+        -- Change state to running
+        humanoid:ChangeState(Enum.HumanoidStateType.Running)
+    end
+end
+
+-- GUI Creation
+local function createMenu()
+    -- Create main screen GUI
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "0xGREEN_Menu"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = CoreGui
+    
+    -- Create main frame
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Name = "MainFrame"
+    mainFrame.Size = config.menuSize
+    mainFrame.Position = config.menuPosition
+    mainFrame.BackgroundColor3 = config.theme.background
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+    
+    -- Create title bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Name = "TitleBar"
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.Position = UDim2.new(0, 0, 0, 0)
+    titleBar.BackgroundColor3 = config.theme.panel
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = mainFrame
+    
+    -- Create title label
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 1, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = "0xGREEN ULTIMATE MAX - PROFESSIONAL EDITION"
+    titleLabel.TextColor3 = config.theme.text
+    titleLabel.TextSize = 14
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.Parent = titleBar
+    
+    -- Create close button
+    local closeButton = Instance.new("TextButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 30, 0, 30)
+    closeButton.Position = UDim2.new(1, -30, 0, 0)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Text = "X"
+    closeButton.TextColor3 = config.theme.danger
+    closeButton.TextSize = 16
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.Parent = titleBar
+    
+    -- Create sidebar
+    local sidebar = Instance.new("Frame")
+    sidebar.Name = "Sidebar"
+    sidebar.Size = UDim2.new(0, 150, 1, -30)
+    sidebar.Position = UDim2.new(0, 0, 0, 30)
+    sidebar.BackgroundColor3 = config.theme.panel
+    sidebar.BorderSizePixel = 0
+    sidebar.Parent = mainFrame
+    
+    -- Create content frame
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Name = "ContentFrame"
+    contentFrame.Size = UDim2.new(1, -150, 1, -30)
+    contentFrame.Position = UDim2.new(0, 150, 0, 30)
+    contentFrame.BackgroundColor3 = config.theme.background
+    contentFrame.BorderSizePixel = 0
+    contentFrame.Parent = mainFrame
+    
+    -- Create tabs
+    local tabs = {"Aimbot", "ESP", "Combat", "Movement", "Visuals", "Utility", "Protection"}
+    local tabButtons = {}
+    local tabFrames = {}
+    
+    for i, tabName in ipairs(tabs) do
+        -- Create tab button
+        local tabButton = Instance.new("TextButton")
+        tabButton.Name = tabName .. "Button"
+        tabButton.Size = UDim2.new(1, 0, 0, 40)
+        tabButton.Position = UDim2.new(0, 0, 0, (i-1) * 40)
+        tabButton.BackgroundColor3 = config.theme.secondary
+        tabButton.BorderSizePixel = 0
+        tabButton.Text = tabName
+        tabButton.TextColor3 = config.theme.text
+        tabButton.TextSize = 14
+        tabButton.Font = Enum.Font.SourceSans
+        tabButton.Parent = sidebar
+        
+        -- Create tab frame
+        local tabFrame = Instance.new("ScrollingFrame")
+        tabFrame.Name = tabName .. "Frame"
+        tabFrame.Size = UDim2.new(1, 0, 1, 0)
+        tabFrame.Position = UDim2.new(0, 0, 0, 0)
+        tabFrame.BackgroundColor3 = Color3.new(0, 0, 0, 0)
+        tabFrame.BorderSizePixel = 0
+        tabFrame.ScrollBarThickness = 8
+        tabFrame.Visible = i == 1
+        tabFrame.Parent = contentFrame
+        
+        tabButtons[tabName] = tabButton
+        tabFrames[tabName] = tabFrame
+        
+        -- Tab button click handler
+        tabButton.MouseButton1Click:Connect(function()
+            -- Hide all tab frames
+            for _, frame in pairs(tabFrames) do
+                frame.Visible = false
+            end
+            
+            -- Show selected tab frame
+            tabFrame.Visible = true
+            
+            -- Update button colors
+            for _, button in pairs(tabButtons) do
+                button.BackgroundColor3 = config.theme.secondary
+            end
+            tabButton.BackgroundColor3 = config.theme.accent
+        end)
+    end
+    
+    -- Set first tab as active
+    tabButtons["Aimbot"].BackgroundColor3 = config.theme.accent
+    
+    -- Create Aimbot tab content
+    local aimbotFrame = tabFrames["Aimbot"]
+    
+    -- Silent Aim toggle
+    local silentAimToggle = Instance.new("TextButton")
+    silentAimToggle.Name = "SilentAimToggle"
+    silentAimToggle.Size = UDim2.new(0, 200, 0, 30)
+    silentAimToggle.Position = UDim2.new(0, 10, 0, 10)
+    silentAimToggle.BackgroundColor3 = config.silentAim and config.theme.success or config.theme.secondary
+    silentAimToggle.BorderSizePixel = 0
+    silentAimToggle.Text = "Silent Aim: " .. (config.silentAim and "ON" or "OFF")
+    silentAimToggle.TextColor3 = config.theme.text
+    silentAimToggle.TextSize = 14
+    silentAimToggle.Font = Enum.Font.SourceSans
+    silentAimToggle.Parent = aimbotFrame
+    
+    silentAimToggle.MouseButton1Click:Connect(function()
+        config.silentAim = not config.silentAim
+        silentAimToggle.BackgroundColor3 = config.silentAim and config.theme.success or config.theme.secondary
+        silentAimToggle.Text = "Silent Aim: " .. (config.silentAim and "ON" or "OFF")
+        notify("Aimbot", "Silent Aim " .. (config.silentAim and "enabled" or "disabled"))
+    end)
+    
+    -- Silent Rage toggle
+    local silentRageToggle = Instance.new("TextButton")
+    silentRageToggle.Name = "SilentRageToggle"
+    silentRageToggle.Size = UDim2.new(0, 200, 0, 30)
+    silentRageToggle.Position = UDim2.new(0, 10, 0, 50)
+    silentRageToggle.BackgroundColor3 = config.silentRage and config.theme.success or config.theme.secondary
+    silentRageToggle.BorderSizePixel = 0
+    silentRageToggle.Text = "Silent Rage: " .. (config.silentRage and "ON" or "OFF")
+    silentRageToggle.TextColor3 = config.theme.text
+    silentRageToggle.TextSize = 14
+    silentRageToggle.Font = Enum.Font.SourceSans
+    silentRageToggle.Parent = aimbotFrame
+    
+    silentRageToggle.MouseButton1Click:Connect(function()
+        config.silentRage = not config.silentRage
+        silentRageToggle.BackgroundColor3 = config.silentRage and config.theme.success or config.theme.secondary
+        silentRageToggle.Text = "Silent Rage: " .. (config.silentRage and "ON" or "OFF")
+        notify("Aimbot", "Silent Rage " .. (config.silentRage and "enabled" or "disabled"))
+    end)
+    
+    -- Auto Shoot toggle
+    local autoShootToggle = Instance.new("TextButton")
+    autoShootToggle.Name = "AutoShootToggle"
+    autoShootToggle.Size = UDim2.new(0, 200, 0, 30)
+    autoShootToggle.Position = UDim2.new(0, 10, 0, 90)
+    autoShootToggle.BackgroundColor3 = config.autoShoot and config.theme.success or config.theme.secondary
+    autoShootToggle.BorderSizePixel = 0
+    autoShootToggle.Text = "Auto Shoot: " .. (config.autoShoot and "ON" or "OFF")
+    autoShootToggle.TextColor3 = config.theme.text
+    autoShootToggle.TextSize = 14
+    autoShootToggle.Font = Enum.Font.SourceSans
+    autoShootToggle.Parent = aimbotFrame
+    
+    autoShootToggle.MouseButton1Click:Connect(function()
+        config.autoShoot = not config.autoShoot
+        autoShootToggle.BackgroundColor3 = config.autoShoot and config.theme.success or config.theme.secondary
+        autoShootToggle.Text = "Auto Shoot: " .. (config.autoShoot and "ON" or "OFF")
+        notify("Aimbot", "Auto Shoot " .. (config.autoShoot and "enabled" or "disabled"))
+    end)
+    
+    -- TriggerBot toggle
+    local triggerBotToggle = Instance.new("TextButton")
+    triggerBotToggle.Name = "TriggerBotToggle"
+    triggerBotToggle.Size = UDim2.new(0, 200, 0, 30)
+    triggerBotToggle.Position = UDim2.new(0, 10, 0, 130)
+    triggerBotToggle.BackgroundColor3 = config.triggerBot and config.theme.success or config.theme.secondary
+    triggerBotToggle.BorderSizePixel = 0
+    triggerBotToggle.Text = "TriggerBot: " .. (config.triggerBot and "ON" or "OFF")
+    triggerBotToggle.TextColor3 = config.theme.text
+    triggerBotToggle.TextSize = 14
+    triggerBotToggle.Font = Enum.Font.SourceSans
+    triggerBotToggle.Parent = aimbotFrame
+    
+    triggerBotToggle.MouseButton1Click:Connect(function()
+        config.triggerBot = not config.triggerBot
+        triggerBotToggle.BackgroundColor3 = config.triggerBot and config.theme.success or config.theme.secondary
+        triggerBotToggle.Text = "TriggerBot: " .. (config.triggerBot and "ON" or "OFF")
+        notify("Aimbot", "TriggerBot " .. (config.triggerBot and "enabled" or "disabled"))
+    end)
+    
+    -- Visibility Check toggle
+    local visibilityCheckToggle = Instance.new("TextButton")
+    visibilityCheckToggle.Name = "VisibilityCheckToggle"
+    visibilityCheckToggle.Size = UDim2.new(0, 200, 0, 30)
+    visibilityCheckToggle.Position = UDim2.new(0, 10, 0, 170)
+    visibilityCheckToggle.BackgroundColor3 = config.aimVisibilityCheck and config.theme.success or config.theme.secondary
+    visibilityCheckToggle.BorderSizePixel = 0
+    visibilityCheckToggle.Text = "Visibility Check: " .. (config.aimVisibilityCheck and "ON" or "OFF")
+    visibilityCheckToggle.TextColor3 = config.theme.text
+    visibilityCheckToggle.TextSize = 14
+    visibilityCheckToggle.Font = Enum.Font.SourceSans
+    visibilityCheckToggle.Parent = aimbotFrame
+    
+    visibilityCheckToggle.MouseButton1Click:Connect(function()
+        config.aimVisibilityCheck = not config.aimVisibilityCheck
+        visibilityCheckToggle.BackgroundColor3 = config.aimVisibilityCheck and config.theme.success or config.theme.secondary
+        visibilityCheckToggle.Text = "Visibility Check: " .. (config.aimVisibilityCheck and "ON" or "OFF")
+        notify("Aimbot", "Visibility Check " .. (config.aimVisibilityCheck and "enabled" or "disabled"))
+    end)
+    
+    -- Team Check toggle
+    local teamCheckToggle = Instance.new("TextButton")
+    teamCheckToggle.Name = "TeamCheckToggle"
+    teamCheckToggle.Size = UDim2.new(0, 200, 0, 30)
+    teamCheckToggle.Position = UDim2.new(0, 10, 0, 210)
+    teamCheckToggle.BackgroundColor3 = config.aimTeamCheck and config.theme.success or config.theme.secondary
+    teamCheckToggle.BorderSizePixel = 0
+    teamCheckToggle.Text = "Team Check: " .. (config.aimTeamCheck and "ON" or "OFF")
+    teamCheckToggle.TextColor3 = config.theme.text
+    teamCheckToggle.TextSize = 14
+    teamCheckToggle.Font = Enum.Font.SourceSans
+    teamCheckToggle.Parent = aimbotFrame
+    
+    teamCheckToggle.MouseButton1Click:Connect(function()
+        config.aimTeamCheck = not config.aimTeamCheck
+        teamCheckToggle.BackgroundColor3 = config.aimTeamCheck and config.theme.success or config.theme.secondary
+        teamCheckToggle.Text = "Team Check: " .. (config.aimTeamCheck and "ON" or "OFF")
+        notify("Aimbot", "Team Check " .. (config.aimTeamCheck and "enabled" or "disabled"))
+    end)
+    
+    -- Always Headshot toggle
+    local alwaysHeadshotToggle = Instance.new("TextButton")
+    alwaysHeadshotToggle.Name = "AlwaysHeadshotToggle"
+    alwaysHeadshotToggle.Size = UDim2.new(0, 200, 0, 30)
+    alwaysHeadshotToggle.Position = UDim2.new(0, 10, 0, 250)
+    alwaysHeadshotToggle.BackgroundColor3 = config.alwaysHeadshot and config.theme.success or config.theme.secondary
+    alwaysHeadshotToggle.BorderSizePixel = 0
+    alwaysHeadshotToggle.Text = "Always Headshot: " .. (config.alwaysHeadshot and "ON" or "OFF")
+    alwaysHeadshotToggle.TextColor3 = config.theme.text
+    alwaysHeadshotToggle.TextSize = 14
+    alwaysHeadshotToggle.Font = Enum.Font.SourceSans
+    alwaysHeadshotToggle.Parent = aimbotFrame
+    
+    alwaysHeadshotToggle.MouseButton1Click:Connect(function()
+        config.alwaysHeadshot = not config.alwaysHeadshot
+        alwaysHeadshotToggle.BackgroundColor3 = config.alwaysHeadshot and config.theme.success or config.theme.secondary
+        alwaysHeadshotToggle.Text = "Always Headshot: " .. (config.alwaysHeadshot and "ON" or "OFF")
+        notify("Aimbot", "Always Headshot " .. (config.alwaysHeadshot and "enabled" or "disabled"))
+    end)
+    
+    -- Aim Method dropdown
+    local aimMethodLabel = Instance.new("TextLabel")
+    aimMethodLabel.Name = "AimMethodLabel"
+    aimMethodLabel.Size = UDim2.new(0, 200, 0, 20)
+    aimMethodLabel.Position = UDim2.new(0, 10, 0, 290)
+    aimMethodLabel.BackgroundTransparency = 1
+    aimMethodLabel.Text = "Aim Method:"
+    aimMethodLabel.TextColor3 = config.theme.text
+    aimMethodLabel.TextSize = 14
+    aimMethodLabel.Font = Enum.Font.SourceSans
+    aimMethodLabel.TextXAlignment = Enum.TextXAlignment.Left
+    aimMethodLabel.Parent = aimbotFrame
+    
+    local aimMethodDropdown = Instance.new("TextButton")
+    aimMethodDropdown.Name = "AimMethodDropdown"
+    aimMethodDropdown.Size = UDim2.new(0, 200, 0, 30)
+    aimMethodDropdown.Position = UDim2.new(0, 10, 0, 310)
+    aimMethodDropdown.BackgroundColor3 = config.theme.secondary
+    aimMethodDropdown.BorderSizePixel = 0
+    aimMethodDropdown.Text = config.silentAimMethod
+    aimMethodDropdown.TextColor3 = config.theme.text
+    aimMethodDropdown.TextSize = 14
+    aimMethodDropdown.Font = Enum.Font.SourceSans
+    aimMethodDropdown.Parent = aimbotFrame
+    
+    local aimMethodOptions = {"Camera", "Mouse"}
+    local aimMethodSelected = 1
+    
+    aimMethodDropdown.MouseButton1Click:Connect(function()
+        aimMethodSelected = aimMethodSelected % #aimMethodOptions + 1
+        config.silentAimMethod = aimMethodOptions[aimMethodSelected]
+        aimMethodDropdown.Text = config.silentAimMethod
+        notify("Aimbot", "Aim Method set to: " .. config.silentAimMethod)
+    end)
+    
+    -- Prediction Multiplier slider
+    local predictionMultiplierLabel = Instance.new("TextLabel")
+    predictionMultiplierLabel.Name = "PredictionMultiplierLabel"
+    predictionMultiplierLabel.Size = UDim2.new(0, 200, 0, 20)
+    predictionMultiplierLabel.Position = UDim2.new(0, 10, 0, 350)
+    predictionMultiplierLabel.BackgroundTransparency = 1
+    predictionMultiplierLabel.Text = "Prediction Multiplier: " .. config.predictionMultiplier
+    predictionMultiplierLabel.TextColor3 = config.theme.text
+    predictionMultiplierLabel.TextSize = 14
+    predictionMultiplierLabel.Font = Enum.Font.SourceSans
+    predictionMultiplierLabel.TextXAlignment = Enum.TextXAlignment.Left
+    predictionMultiplierLabel.Parent = aimbotFrame
+    
+    local predictionMultiplierSlider = Instance.new("TextButton")
+    predictionMultiplierSlider.Name = "PredictionMultiplierSlider"
+    predictionMultiplierSlider.Size = UDim2.new(0, 200, 0, 10)
+    predictionMultiplierSlider.Position = UDim2.new(0, 10, 0, 370)
+    predictionMultiplierSlider.BackgroundColor3 = config.theme.secondary
+    predictionMultiplierSlider.BorderSizePixel = 0
+    predictionMultiplierSlider.Text = ""
+    predictionMultiplierSlider.Parent = aimbotFrame
+    
+    local predictionMultiplierFill = Instance.new("Frame")
+    predictionMultiplierFill.Name = "Fill"
+    predictionMultiplierFill.Size = UDim2.new((config.predictionMultiplier - 1) / 9, 0, 1, 0)
+    predictionMultiplierFill.Position = UDim2.new(0, 0, 0, 0)
+    predictionMultiplierFill.BackgroundColor3 = config.theme.accent
+    predictionMultiplierFill.BorderSizePixel = 0
+    predictionMultiplierFill.Parent = predictionMultiplierSlider
+    
+    predictionMultiplierSlider.MouseButton1Down:Connect(function()
+        local mouseMoveConnection
+        local mouseUpConnection
+        
+        mouseMoveConnection = UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = input.Position.X - predictionMultiplierSlider.AbsolutePosition.X
+                local percentage = math.clamp(relativeX / predictionMultiplierSlider.AbsoluteSize.X, 0, 1)
+                config.predictionMultiplier = 1 + percentage * 9
+                predictionMultiplierFill.Size = UDim2.new(percentage, 0, 1, 0)
+                predictionMultiplierLabel.Text = "Prediction Multiplier: " .. math.floor(config.predictionMultiplier * 10) / 10
+            end
+        end)
+        
+        mouseUpConnection = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                mouseMoveConnection:Disconnect()
+                mouseUpConnection:Disconnect()
+                notify("Aimbot", "Prediction Multiplier set to: " .. math.floor(config.predictionMultiplier * 10) / 10)
+            end
+        end)
+    end)
+    
+    -- Aim FOV slider
+    local aimFovLabel = Instance.new("TextLabel")
+    aimFovLabel.Name = "AimFovLabel"
+    aimFovLabel.Size = UDim2.new(0, 200, 0, 20)
+    aimFovLabel.Position = UDim2.new(0, 10, 0, 390)
+    aimFovLabel.BackgroundTransparency = 1
+    aimFovLabel.Text = "Aim FOV: " .. config.aimFov
+    aimFovLabel.TextColor3 = config.theme.text
+    aimFovLabel.TextSize = 14
+    aimFovLabel.Font = Enum.Font.SourceSans
+    aimFovLabel.TextXAlignment = Enum.TextXAlignment.Left
+    aimFovLabel.Parent = aimbotFrame
+    
+    local aimFovSlider = Instance.new("TextButton")
+    aimFovSlider.Name = "AimFovSlider"
+    aimFovSlider.Size = UDim2.new(0, 200, 0, 10)
+    aimFovSlider.Position = UDim2.new(0, 10, 0, 410)
+    aimFovSlider.BackgroundColor3 = config.theme.secondary
+    aimFovSlider.BorderSizePixel = 0
+    aimFovSlider.Text = ""
+    aimFovSlider.Parent = aimbotFrame
+    
+    local aimFovFill = Instance.new("Frame")
+    aimFovFill.Name = "Fill"
+    aimFovFill.Size = UDim2.new(config.aimFov / 360, 0, 1, 0)
+    aimFovFill.Position = UDim2.new(0, 0, 0, 0)
+    aimFovFill.BackgroundColor3 = config.theme.accent
+    aimFovFill.BorderSizePixel = 0
+    aimFovFill.Parent = aimFovSlider
+    
+    aimFovSlider.MouseButton1Down:Connect(function()
+        local mouseMoveConnection
+        local mouseUpConnection
+        
+        mouseMoveConnection = UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = input.Position.X - aimFovSlider.AbsolutePosition.X
+                local percentage = math.clamp(relativeX / aimFovSlider.AbsoluteSize.X, 0, 1)
+                config.aimFov = math.floor(percentage * 360)
+                aimFovFill.Size = UDim2.new(percentage, 0, 1, 0)
+                aimFovLabel.Text = "Aim FOV: " .. config.aimFov
+                drawings.fov.Radius = config.aimFov
+            end
+        end)
+        
+        mouseUpConnection = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                mouseMoveConnection:Disconnect()
+                mouseUpConnection:Disconnect()
+                notify("Aimbot", "Aim FOV set to: " .. config.aimFov)
+            end
+        end)
+    end)
+    
+    -- Aim Smoothness slider
+    local aimSmoothnessLabel = Instance.new("TextLabel")
+    aimSmoothnessLabel.Name = "AimSmoothnessLabel"
+    aimSmoothnessLabel.Size = UDim2.new(0, 200, 0, 20)
+    aimSmoothnessLabel.Position = UDim2.new(0, 10, 0, 430)
+    aimSmoothnessLabel.BackgroundTransparency = 1
+    aimSmoothnessLabel.Text = "Aim Smoothness: " .. config.aimSmoothness
+    aimSmoothnessLabel.TextColor3 = config.theme.text
+    aimSmoothnessLabel.TextSize = 14
+    aimSmoothnessLabel.Font = Enum.Font.SourceSans
+    aimSmoothnessLabel.TextXAlignment = Enum.TextXAlignment.Left
+    aimSmoothnessLabel.Parent = aimbotFrame
+    
+    local aimSmoothnessSlider = Instance.new("TextButton")
+    aimSmoothnessSlider.Name = "AimSmoothnessSlider"
+    aimSmoothnessSlider.Size = UDim2.new(0, 200, 0, 10)
+    aimSmoothnessSlider.Position = UDim2.new(0, 10, 0, 450)
+    aimSmoothnessSlider.BackgroundColor3 = config.theme.secondary
+    aimSmoothnessSlider.BorderSizePixel = 0
+    aimSmoothnessSlider.Text = ""
+    aimSmoothnessSlider.Parent = aimbotFrame
+    
+    local aimSmoothnessFill = Instance.new("Frame")
+    aimSmoothnessFill.Name = "Fill"
+    aimSmoothnessFill.Size = UDim2.new(config.aimSmoothness, 0, 1, 0)
+    aimSmoothnessFill.Position = UDim2.new(0, 0, 0, 0)
+    aimSmoothnessFill.BackgroundColor3 = config.theme.accent
+    aimSmoothnessFill.BorderSizePixel = 0
+    aimSmoothnessFill.Parent = aimSmoothnessSlider
+    
+    aimSmoothnessSlider.MouseButton1Down:Connect(function()
+        local mouseMoveConnection
+        local mouseUpConnection
+        
+        mouseMoveConnection = UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = input.Position.X - aimSmoothnessSlider.AbsolutePosition.X
+                local percentage = math.clamp(relativeX / aimSmoothnessSlider.AbsoluteSize.X, 0, 1)
+                config.aimSmoothness = percentage
+                aimSmoothnessFill.Size = UDim2.new(percentage, 0, 1, 0)
+                aimSmoothnessLabel.Text = "Aim Smoothness: " .. math.floor(config.aimSmoothness * 100) / 100
+            end
+        end)
+        
+        mouseUpConnection = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                mouseMoveConnection:Disconnect()
+                mouseUpConnection:Disconnect()
+                notify("Aimbot", "Aim Smoothness set to: " .. math.floor(config.aimSmoothness * 100) / 100)
+            end
+        end)
+    end)
+    
+    -- Aim Priority dropdown
+    local aimPriorityLabel = Instance.new("TextLabel")
+    aimPriorityLabel.Name = "AimPriorityLabel"
+    aimPriorityLabel.Size = UDim2.new(0, 200, 0, 20)
+    aimPriorityLabel.Position = UDim2.new(0, 10, 0, 470)
+    aimPriorityLabel.BackgroundTransparency = 1
+    aimPriorityLabel.Text = "Aim Priority:"
+    aimPriorityLabel.TextColor3 = config.theme.text
+    aimPriorityLabel.TextSize = 14
+    aimPriorityLabel.Font = Enum.Font.SourceSans
+    aimPriorityLabel.TextXAlignment = Enum.TextXAlignment.Left
+    aimPriorityLabel.Parent = aimbotFrame
+    
+    local aimPriorityDropdown = Instance.new("TextButton")
+    aimPriorityDropdown.Name = "AimPriorityDropdown"
+    aimPriorityDropdown.Size = UDim2.new(0, 200, 0, 30)
+    aimPriorityDropdown.Position = UDim2.new(0, 10, 0, 490)
+    aimPriorityDropdown.BackgroundColor3 = config.theme.secondary
+    aimPriorityDropdown.BorderSizePixel = 0
+    aimPriorityDropdown.Text = config.aimPriority
+    aimPriorityDropdown.TextColor3 = config.theme.text
+    aimPriorityDropdown.TextSize = 14
+    aimPriorityDropdown.Font = Enum.Font.SourceSans
+    aimPriorityDropdown.Parent = aimbotFrame
+    
+    local aimPriorityOptions = {"Distance", "Health", "Crosshair"}
+    local aimPrioritySelected = 1
+    
+    aimPriorityDropdown.MouseButton1Click:Connect(function()
+        aimPrioritySelected = aimPrioritySelected % #aimPriorityOptions + 1
+        config.aimPriority = aimPriorityOptions[aimPrioritySelected]
+        aimPriorityDropdown.Text = config.aimPriority
+        notify("Aimbot", "Aim Priority set to: " .. config.aimPriority)
+    end)
+    
+    -- Create ESP tab content
+    local espFrame = tabFrames["ESP"]
+    
+    -- ESP Enabled toggle
+    local espEnabledToggle = Instance.new("TextButton")
+    espEnabledToggle.Name = "EspEnabledToggle"
+    espEnabledToggle.Size = UDim2.new(0, 200, 0, 30)
+    espEnabledToggle.Position = UDim2.new(0, 10, 0, 10)
+    espEnabledToggle.BackgroundColor3 = config.espEnabled and config.theme.success or config.theme.secondary
+    espEnabledToggle.BorderSizePixel = 0
+    espEnabledToggle.Text = "ESP Enabled: " .. (config.espEnabled and "ON" or "OFF")
+    espEnabledToggle.TextColor3 = config.theme.text
+    espEnabledToggle.TextSize = 14
+    espEnabledToggle.Font = Enum.Font.SourceSans
+    espEnabledToggle.Parent = espFrame
+    
+    espEnabledToggle.MouseButton1Click:Connect(function()
+        config.espEnabled = not config.espEnabled
+        espEnabledToggle.BackgroundColor3 = config.espEnabled and config.theme.success or config.theme.secondary
+        espEnabledToggle.Text = "ESP Enabled: " .. (config.espEnabled and "ON" or "OFF")
+        notify("ESP", "ESP " .. (config.espEnabled and "enabled" or "disabled"))
+    end)
+    
+    -- Add more ESP toggles here (similar to Aimbot toggles)
+    -- For brevity, I'll just add a few examples
+    
+    -- ESP Name toggle
+    local espNameToggle = Instance.new("TextButton")
+    espNameToggle.Name = "EspNameToggle"
+    espNameToggle.Size = UDim2.new(0, 200, 0, 30)
+    espNameToggle.Position = UDim2.new(0, 10, 0, 50)
+    espNameToggle.BackgroundColor3 = config.espName and config.theme.success or config.theme.secondary
+    espNameToggle.BorderSizePixel = 0
+    espNameToggle.Text = "ESP Name: " .. (config.espName and "ON" or "OFF")
+    espNameToggle.TextColor3 = config.theme.text
+    espNameToggle.TextSize = 14
+    espNameToggle.Font = Enum.Font.SourceSans
+    espNameToggle.Parent = espFrame
+    
+    espNameToggle.MouseButton1Click:Connect(function()
+        config.espName = not config.espName
+        espNameToggle.BackgroundColor3 = config.espName and config.theme.success or config.theme.secondary
+        espNameToggle.Text = "ESP Name: " .. (config.espName and "ON" or "OFF")
+        notify("ESP", "ESP Name " .. (config.espName and "enabled" or "disabled"))
+    end)
+    
+    -- ESP Health toggle
+    local espHealthToggle = Instance.new("TextButton")
+    espHealthToggle.Name = "EspHealthToggle"
+    espHealthToggle.Size = UDim2.new(0, 200, 0, 30)
+    espHealthToggle.Position = UDim2.new(0, 10, 0, 90)
+    espHealthToggle.BackgroundColor3 = config.espHealth and config.theme.success or config.theme.secondary
+    espHealthToggle.BorderSizePixel = 0
+    espHealthToggle.Text = "ESP Health: " .. (config.espHealth and "ON" or "OFF")
+    espHealthToggle.TextColor3 = config.theme.text
+    espHealthToggle.TextSize = 14
+    espHealthToggle.Font = Enum.Font.SourceSans
+    espHealthToggle.Parent = espFrame
+    
+    espHealthToggle.MouseButton1Click:Connect(function()
+        config.espHealth = not config.espHealth
+        espHealthToggle.BackgroundColor3 = config.espHealth and config.theme.success or config.theme.secondary
+        espHealthToggle.Text = "ESP Health: " .. (config.espHealth and "ON" or "OFF")
+        notify("ESP", "ESP Health " .. (config.espHealth and "enabled" or "disabled"))
+    end)
+    
+    -- Create Combat tab content
+    local combatFrame = tabFrames["Combat"]
+    
+    -- Kill Aura toggle
+    local killAuraToggle = Instance.new("TextButton")
+    killAuraToggle.Name = "KillAuraToggle"
+    killAuraToggle.Size = UDim2.new(0, 200, 0, 30)
+    killAuraToggle.Position = UDim2.new(0, 10, 0, 10)
+    killAuraToggle.BackgroundColor3 = config.killAura and config.theme.success or config.theme.secondary
+    killAuraToggle.BorderSizePixel = 0
+    killAuraToggle.Text = "Kill Aura: " .. (config.killAura and "ON" or "OFF")
+    killAuraToggle.TextColor3 = config.theme.text
+    killAuraToggle.TextSize = 14
+    killAuraToggle.Font = Enum.Font.SourceSans
+    killAuraToggle.Parent = combatFrame
+    
+    killAuraToggle.MouseButton1Click:Connect(function()
+        config.killAura = not config.killAura
+        killAuraToggle.BackgroundColor3 = config.killAura and config.theme.success or config.theme.secondary
+        killAuraToggle.Text = "Kill Aura: " .. (config.killAura and "ON" or "OFF")
+        notify("Combat", "Kill Aura " .. (config.killAura and "enabled" or "disabled"))
+    end)
+    
+    -- Tele Kill toggle
+    local teleKillToggle = Instance.new("TextButton")
+    teleKillToggle.Name = "TeleKillToggle"
+    teleKillToggle.Size = UDim2.new(0, 200, 0, 30)
+    teleKillToggle.Position = UDim2.new(0, 10, 0, 50)
+    teleKillToggle.BackgroundColor3 = config.teleKill and config.theme.success or config.theme.secondary
+    teleKillToggle.BorderSizePixel = 0
+    teleKillToggle.Text = "Tele Kill: " .. (config.teleKill and "ON" or "OFF")
+    teleKillToggle.TextColor3 = config.theme.text
+    teleKillToggle.TextSize = 14
+    teleKillToggle.Font = Enum.Font.SourceSans
+    teleKillToggle.Parent = combatFrame
+    
+    teleKillToggle.MouseButton1Click:Connect(function()
+        config.teleKill = not config.teleKill
+        teleKillToggle.BackgroundColor3 = config.teleKill and config.theme.success or config.theme.secondary
+        teleKillToggle.Text = "Tele Kill: " .. (config.teleKill and "ON" or "OFF")
+        notify("Combat", "Tele Kill " .. (config.teleKill and "enabled" or "disabled"))
+    end)
+    
+    -- Create Movement tab content
+    local movementFrame = tabFrames["Movement"]
+    
+    -- Speed Hack toggle
+    local speedHackToggle = Instance.new("TextButton")
+    speedHackToggle.Name = "SpeedHackToggle"
+    speedHackToggle.Size = UDim2.new(0, 200, 0, 30)
+    speedHackToggle.Position = UDim2.new(0, 10, 0, 10)
+    speedHackToggle.BackgroundColor3 = config.speedHack and config.theme.success or config.theme.secondary
+    speedHackToggle.BorderSizePixel = 0
+    speedHackToggle.Text = "Speed Hack: " .. (config.speedHack and "ON" or "OFF")
+    speedHackToggle.TextColor3 = config.theme.text
+    speedHackToggle.TextSize = 14
+    speedHackToggle.Font = Enum.Font.SourceSans
+    speedHackToggle.Parent = movementFrame
+    
+    speedHackToggle.MouseButton1Click:Connect(function()
+        config.speedHack = not config.speedHack
+        speedHackToggle.BackgroundColor3 = config.speedHack and config.theme.success or config.theme.secondary
+        speedHackToggle.Text = "Speed Hack: " .. (config.speedHack and "ON" or "OFF")
+        notify("Movement", "Speed Hack " .. (config.speedHack and "enabled" or "disabled"))
+    end)
+    
+    -- Fly toggle
+    local flyToggle = Instance.new("TextButton")
+    flyToggle.Name = "FlyToggle"
+    flyToggle.Size = UDim2.new(0, 200, 0, 30)
+    flyToggle.Position = UDim2.new(0, 10, 0, 50)
+    flyToggle.BackgroundColor3 = config.fly and config.theme.success or config.theme.secondary
+    flyToggle.BorderSizePixel = 0
+    flyToggle.Text = "Fly: " .. (config.fly and "ON" or "OFF")
+    flyToggle.TextColor3 = config.theme.text
+    flyToggle.TextSize = 14
+    flyToggle.Font = Enum.Font.SourceSans
+    flyToggle.Parent = movementFrame
+    
+    flyToggle.MouseButton1Click:Connect(function()
+        config.fly = not config.fly
+        flyToggle.BackgroundColor3 = config.fly and config.theme.success or config.theme.secondary
+        flyToggle.Text = "Fly: " .. (config.fly and "ON" or "OFF")
+        notify("Movement", "Fly " .. (config.fly and "enabled" or "disabled"))
+        handleFly()
+    end)
+    
+    -- Create Visuals tab content
+    local visualsFrame = tabFrames["Visuals"]
+    
+    -- Custom FOV toggle
+    local customFovToggle = Instance.new("TextButton")
+    customFovToggle.Name = "CustomFovToggle"
+    customFovToggle.Size = UDim2.new(0, 200, 0, 30)
+    customFovToggle.Position = UDim2.new(0, 10, 0, 10)
+    customFovToggle.BackgroundColor3 = config.customFov and config.theme.success or config.theme.secondary
+    customFovToggle.BorderSizePixel = 0
+    customFovToggle.Text = "Custom FOV: " .. (config.customFov and "ON" or "OFF")
+    customFovToggle.TextColor3 = config.theme.text
+    customFovToggle.TextSize = 14
+    customFovToggle.Font = Enum.Font.SourceSans
+    customFovToggle.Parent = visualsFrame
+    
+    customFovToggle.MouseButton1Click:Connect(function()
+        config.customFov = not config.customFov
+        customFovToggle.BackgroundColor3 = config.customFov and config.theme.success or config.theme.secondary
+        customFovToggle.Text = "Custom FOV: " .. (config.customFov and "ON" or "OFF")
+        notify("Visuals", "Custom FOV " .. (config.customFov and "enabled" or "disabled"))
+    end)
+    
+    -- Fullbright toggle
+    local fullbrightToggle = Instance.new("TextButton")
+    fullbrightToggle.Name = "FullbrightToggle"
+    fullbrightToggle.Size = UDim2.new(0, 200, 0, 30)
+    fullbrightToggle.Position = UDim2.new(0, 10, 0, 50)
+    fullbrightToggle.BackgroundColor3 = config.fullbright and config.theme.success or config.theme.secondary
+    fullbrightToggle.BorderSizePixel = 0
+    fullbrightToggle.Text = "Fullbright: " .. (config.fullbright and "ON" or "OFF")
+    fullbrightToggle.TextColor3 = config.theme.text
+    fullbrightToggle.TextSize = 14
+    fullbrightToggle.Font = Enum.Font.SourceSans
+    fullbrightToggle.Parent = visualsFrame
+    
+    fullbrightToggle.MouseButton1Click:Connect(function()
+        config.fullbright = not config.fullbright
+        fullbrightToggle.BackgroundColor3 = config.fullbright and config.theme.success or config.theme.secondary
+        fullbrightToggle.Text = "Fullbright: " .. (config.fullbright and "ON" or "OFF")
+        notify("Visuals", "Fullbright " .. (config.fullbright and "enabled" or "disabled"))
+    end)
+    
+    -- Create Utility tab content
+    local utilityFrame = tabFrames["Utility"]
+    
+    -- Auto Respawn toggle
+    local autoRespawnToggle = Instance.new("TextButton")
+    autoRespawnToggle.Name = "AutoRespawnToggle"
+    autoRespawnToggle.Size = UDim2.new(0, 200, 0, 30)
+    autoRespawnToggle.Position = UDim2.new(0, 10, 0, 10)
+    autoRespawnToggle.BackgroundColor3 = config.autoRespawn and config.theme.success or config.theme.secondary
+    autoRespawnToggle.BorderSizePixel = 0
+    autoRespawnToggle.Text = "Auto Respawn: " .. (config.autoRespawn and "ON" or "OFF")
+    autoRespawnToggle.TextColor3 = config.theme.text
+    autoRespawnToggle.TextSize = 14
+    autoRespawnToggle.Font = Enum.Font.SourceSans
+    autoRespawnToggle.Parent = utilityFrame
+    
+    autoRespawnToggle.MouseButton1Click:Connect(function()
+        config.autoRespawn = not config.autoRespawn
+        autoRespawnToggle.BackgroundColor3 = config.autoRespawn and config.theme.success or config.theme.secondary
+        autoRespawnToggle.Text = "Auto Respawn: " .. (config.autoRespawn and "ON" or "OFF")
+        notify("Utility", "Auto Respawn " .. (config.autoRespawn and "enabled" or "disabled"))
+    end)
+    
+    -- Chat Spam toggle
+    local chatSpamToggle = Instance.new("TextButton")
+    chatSpamToggle.Name = "ChatSpamToggle"
+    chatSpamToggle.Size = UDim2.new(0, 200, 0, 30)
+    chatSpamToggle.Position = UDim2.new(0, 10, 0, 50)
+    chatSpamToggle.BackgroundColor3 = config.chatSpam and config.theme.success or config.theme.secondary
+    chatSpamToggle.BorderSizePixel = 0
+    chatSpamToggle.Text = "Chat Spam: " .. (config.chatSpam and "ON" or "OFF")
+    chatSpamToggle.TextColor3 = config.theme.text
+    chatSpamToggle.TextSize = 14
+    chatSpamToggle.Font = Enum.Font.SourceSans
+    chatSpamToggle.Parent = utilityFrame
+    
+    chatSpamToggle.MouseButton1Click:Connect(function()
+        config.chatSpam = not config.chatSpam
+        chatSpamToggle.BackgroundColor3 = config.chatSpam and config.theme.success or config.theme.secondary
+        chatSpamToggle.Text = "Chat Spam: " .. (config.chatSpam and "ON" or "OFF")
+        notify("Utility", "Chat Spam " .. (config.chatSpam and "enabled" or "disabled"))
+    end)
+    
+    -- Create Protection tab content
+    local protectionFrame = tabFrames["Protection"]
+    
+    -- Anti Kick toggle
+    local antiKickToggle = Instance.new("TextButton")
+    antiKickToggle.Name = "AntiKickToggle"
+    antiKickToggle.Size = UDim2.new(0, 200, 0, 30)
+    antiKickToggle.Position = UDim2.new(0, 10, 0, 10)
+    antiKickToggle.BackgroundColor3 = config.antiKick and config.theme.success or config.theme.secondary
+    antiKickToggle.BorderSizePixel = 0
+    antiKickToggle.Text = "Anti Kick: " .. (config.antiKick and "ON" or "OFF")
+    antiKickToggle.TextColor3 = config.theme.text
+    antiKickToggle.TextSize = 14
+    antiKickToggle.Font = Enum.Font.SourceSans
+    antiKickToggle.Parent = protectionFrame
+    
+    antiKickToggle.MouseButton1Click:Connect(function()
+        config.antiKick = not config.antiKick
+        antiKickToggle.BackgroundColor3 = config.antiKick and config.theme.success or config.theme.secondary
+        antiKickToggle.Text = "Anti Kick: " .. (config.antiKick and "ON" or "OFF")
+        notify("Protection", "Anti Kick " .. (config.antiKick and "enabled" or "disabled"))
+    end)
+    
+    -- Anti Ban toggle
+    local antiBanToggle = Instance.new("TextButton")
+    antiBanToggle.Name = "AntiBanToggle"
+    antiBanToggle.Size = UDim2.new(0, 200, 0, 30)
+    antiBanToggle.Position = UDim2.new(0, 10, 0, 50)
+    antiBanToggle.BackgroundColor3 = config.antiBan and config.theme.success or config.theme.secondary
+    antiBanToggle.BorderSizePixel = 0
+    antiBanToggle.Text = "Anti Ban: " .. (config.antiBan and "ON" or "OFF")
+    antiBanToggle.TextColor3 = config.theme.text
+    antiBanToggle.TextSize = 14
+    antiBanToggle.Font = Enum.Font.SourceSans
+    antiBanToggle.Parent = protectionFrame
+    
+    antiBanToggle.MouseButton1Click:Connect(function()
+        config.antiBan = not config.antiBan
+        antiBanToggle.BackgroundColor3 = config.antiBan and config.theme.success or config.theme.secondary
+        antiBanToggle.Text = "Anti Ban: " .. (config.antiBan and "ON" or "OFF")
+        notify("Protection", "Anti Ban " .. (config.antiBan and "enabled" or "disabled"))
+    end)
+    
+    -- Make GUI draggable
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    titleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            mainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    -- Close button functionality
+    closeButton.MouseButton1Click:Connect(function()
+        state.menuOpen = not state.menuOpen
+        screenGui.Enabled = state.menuOpen
+    end)
+    
+    -- Store GUI references
+    state.screenGui = screenGui
+    state.mainFrame = mainFrame
+    
+    return screenGui
+end
+
+-- Main Loops
+local function onRenderStepped()
+    -- Update ESP
+    updateESP()
+    
+    -- Update visuals
+    handleVisuals()
+    
+    -- Handle aimbot
+    if config.aimEnabled then
+        local currentTime = tick()
+        if currentTime - state.lastAimbotCheck > 0.05 then
+            state.lastAimbotCheck = currentTime
+            
+            -- Pre-fire check
+            preFireCheck()
+            
+            -- Get closest player
+            state.currentTarget = getClosestPlayer()
+            
+            -- Aim at target
+            if state.currentTarget then
+                aimAt(state.currentTarget)
+            end
+            
+            -- Trigger bot
+            triggerBot()
+        end
+    end
+    
+    -- Handle kill aura
+    if config.killAura then
+        local currentTime = tick()
+        if currentTime - state.lastKillAuraCheck > 0.1 then
+            state.lastKillAuraCheck = currentTime
+            killAura()
+        end
+    end
+    
+    -- Handle auto clicker
+    if config.autoClicker then
+        local currentTime = tick()
+        if currentTime - state.lastAutoClick > 0.1 then
+            state.lastAutoClick = currentTime
+            handleAutoClicker()
+        end
+    end
+end
+
+local function onHeartbeat()
+    -- Handle movement
+    handleMovement()
+    
+    -- Handle bunny hop
+    if config.bHop then
+        handleBHop()
+    end
+    
+    -- Handle anti aim
+    if config.antiAim then
+        handleAntiAim()
+    end
+    
+    -- Check and reload
+    if config.autoReload then
+        checkAndReload()
+    end
+    
+    -- Auto heal
+    if config.autoHeal then
+        autoHeal()
+    end
+    
+    -- Auto armor
+    if config.autoArmor then
+        autoArmor()
+    end
+    
+    -- Auto respawn
+    if config.autoRespawn then
+        handleAutoRespawn()
+    end
+    
+    -- Chat spam
+    if config.chatSpam then
+        handleChatSpam()
+    end
+    
+    -- Server hop
+    if config.serverHop then
+        handleServerHop()
+    end
+    
+    -- Rejoin game
+    if config.rejoinGame then
+        handleRejoinGame()
+    end
+    
+    -- Macro recorder
+    if config.macroRecorder then
+        handleMacroRecorder()
+    end
+    
+    -- Protection features
+    if config.antiKick then
+        handleAntiKick()
+    end
+    
+    if config.antiBan then
+        handleAntiBan()
+    end
+    
+    if config.antiTeleport then
+        handleAntiTeleport()
+    end
+    
+    if config.antiVoid then
+        handleAntiVoid()
+    end
+    
+    if config.antiStun then
+        handleAntiStun()
+    end
+end
+
+-- Input handling
+local function onInputBegan(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- Menu toggle
+    if input.KeyCode == config.menuKey then
+        state.menuOpen = not state.menuOpen
+        if state.screenGui then
+            state.screenGui.Enabled = state.menuOpen
+        end
+        notify("Menu", state.menuOpen and "Menu opened" or "Menu closed")
+    end
+    
+    -- Aim toggle
+    if input.KeyCode == config.hotkeys.toggleAim then
+        config.aimEnabled = not config.aimEnabled
+        notify("Aimbot", "Aimbot " .. (config.aimEnabled and "enabled" or "disabled"))
+    end
+    
+    -- ESP toggle
+    if input.KeyCode == config.hotkeys.toggleEsp then
+        config.espEnabled = not config.espEnabled
+        notify("ESP", "ESP " .. (config.espEnabled and "enabled" or "disabled"))
+    end
+    
+    -- Speed toggle
+    if input.KeyCode == config.hotkeys.toggleSpeed then
+        config.speedHack = not config.speedHack
+        notify("Movement", "Speed Hack " .. (config.speedHack and "enabled" or "disabled"))
+    end
+    
+    -- Fly toggle
+    if input.KeyCode == config.hotkeys.toggleFly then
+        config.fly = not config.fly
+        notify("Movement", "Fly " .. (config.fly and "enabled" or "disabled"))
+        handleFly()
+    end
+    
+    -- BHop toggle
+    if input.KeyCode == config.hotkeys.toggleBHop then
+        config.bHop = not config.bHop
+        notify("Movement", "BHop " .. (config.bHop and "enabled" or "disabled"))
+    end
+    
+    -- Trigger toggle
+    if input.KeyCode == config.hotkeys.toggleTrigger then
+        config.triggerBot = not config.triggerBot
+        notify("Aimbot", "TriggerBot " .. (config.triggerBot and "enabled" or "disabled"))
+    end
+    
+    -- Noclip toggle
+    if input.KeyCode == config.hotkeys.toggleNoclip then
+        config.noclip = not config.noclip
+        notify("Movement", "Noclip " .. (config.noclip and "enabled" or "disabled"))
+    end
+    
+    -- Kill Aura toggle
+    if input.KeyCode == config.hotkeys.toggleKillAura then
+        config.killAura = not config.killAura
+        notify("Combat", "Kill Aura " .. (config.killAura and "enabled" or "disabled"))
+    end
+    
+    -- Rapid Fire toggle
+    if input.KeyCode == config.hotkeys.toggleRapidFire then
+        config.rapidFire = not config.rapidFire
+        notify("Combat", "Rapid Fire " .. (config.rapidFire and "enabled" or "disabled"))
+    end
+    
+    -- Auto Clicker toggle
+    if input.KeyCode == config.hotkeys.toggleAutoClicker then
+        config.autoClicker = not config.autoClicker
+        notify("Utility", "Auto Clicker " .. (config.autoClicker and "enabled" or "disabled"))
+    end
+    
+    -- Server Hop
+    if input.KeyCode == config.hotkeys.serverHop then
+        handleServerHop()
+    end
+    
+    -- Rejoin Game
+    if input.KeyCode == config.hotkeys.rejoinGame then
+        handleRejoinGame()
+    end
+    
+    -- Reload Config
+    if input.KeyCode == config.hotkeys.reloadConfig then
+        notify("Config", "Reloading configuration...")
+        -- In a real implementation, you would reload the config here
+    end
+    
+    -- Tele Kill
+    if input.KeyCode == config.teleKillKey then
+        teleKillTarget()
+    end
+end
+
+-- Player added/removed handling
+local function onPlayerAdded(player)
+    -- Create ESP for new player
+    if player ~= LocalPlayer then
+        createESP(player)
+    end
+end
+
+local function onPlayerRemoved(player)
+    -- Clean up ESP for removed player
+    if drawings.esp[player] then
+        for _, drawing in pairs(drawings.esp[player]) do
+            drawing:Remove()
+        end
+        drawings.esp[player] = nil
+    end
+    
+    -- Clean up Chams
+    if drawings.chams[player] then
+        for _, box in pairs(drawings.chams[player]) do
+            box:Destroy()
+        end
+        drawings.chams[player] = nil
+    end
+    
+    -- Clean up Skeleton
+    if drawings.skeleton[player] then
+        for _, skeletonData in pairs(drawings.skeleton[player]) do
+            skeletonData.line:Remove()
+        end
+        drawings.skeleton[player] = nil
+    end
+    
+    -- Clean up Tracers
+    if drawings.tracers[player] then
+        drawings.tracers[player]:Remove()
+        drawings.tracers[player] = nil
+    end
+    
+    -- Clean up Offscreen
+    if drawings.offscreen[player] then
+        drawings.offscreen[player]:Remove()
+        drawings.offscreen[player] = nil
+    end
+    
+    -- Clean up 2D Boxes
+    if drawings.boxes2D[player] then
+        for _, line in pairs(drawings.boxes2D[player]) do
+            line:Remove()
+        end
+        drawings.boxes2D[player] = nil
+    end
+    
+    -- Clean up 3D Boxes
+    if drawings.boxes3D[player] then
+        for _, line in pairs(drawings.boxes3D[player]) do
+            line:Remove()
+        end
+        drawings.boxes3D[player] = nil
+    end
+    
+    -- Clean up Name Tags
+    if drawings.nameTags[player] then
+        drawings.nameTags[player]:Remove()
+        drawings.nameTags[player] = nil
+    end
+end
+
+-- Character added handling
+local function onCharacterAdded(character)
+    -- Store original values
+    local humanoid = character:WaitForChild("Humanoid")
+    state.originalWalkSpeed = humanoid.WalkSpeed
+    state.originalJumpPower = humanoid.JumpPower
+    
+    -- Create ESP for character
+    createESP(LocalPlayer)
+end
+
+-- Initialize
+local function initialize()
+    -- Initialize remotes
+    initRemotes()
+    
+    -- Store original lighting settings
+    state.originalLightingSettings = {
+        Ambient = Lighting.Ambient,
+        Brightness = Lighting.Brightness,
+        FogEnd = Lighting.FogEnd,
+        GlobalShadows = Lighting.GlobalShadows,
+        ClockTime = Lighting.ClockTime
+    }
+    
+    -- Store original camera FOV
+    state.originalFov = Camera.FieldOfView
+    
+    -- Create GUI
+    createMenu()
+    
+    -- Connect events
+    RunService.RenderStepped:Connect(onRenderStepped)
+    RunService.Heartbeat:Connect(onHeartbeat)
+    UserInputService.InputBegan:Connect(onInputBegan)
+    
+    -- Player events
+    Players.PlayerAdded:Connect(onPlayerAdded)
+    Players.PlayerRemoving:Connect(onPlayerRemoved)
+    
+    -- Initialize existing players
+    for _, player in ipairs(Players:GetPlayers()) do
+        onPlayerAdded(player)
+    end
+    
+    -- Character events
+    LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+    if LocalPlayer.Character then
+        onCharacterAdded(LocalPlayer.Character)
+    end
+    
+    -- Initial notification
+    notify("0xGREEN", "Ultimate Max Professional Edition loaded successfully!", 5)
+    debugLog("Script initialized successfully")
+end
+
+-- Start the script
+initialize()
